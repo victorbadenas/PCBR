@@ -1,3 +1,0 @@
-[submodule "bert-as-a-service"]
-	path = bert-as-a-service
-	url = https://github.com/hanxiao/bert-as-service
