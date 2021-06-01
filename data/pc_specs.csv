@@ -1,0 +1,25 @@
+ID,Laptop/Desktop,Brand,OS,CPU,RAM,SSD,HDD,GPU,Optical Drive,Price (€),Comments (don't use commas)
+0,Desktop,HP,Windows,Intel Core i5,16 GB,256 GB,1 TB,Integrated,DVD-RW,499,Mid/low-end PC for casual email/browser use. If Win10 SSD absolutely required.
+1,Desktop,HP,Windows,Intel Core i7,16 GB,256 GB,2 TB,NVIDIA GTX 1650 6 GB,DVD-RW,916,Mid-end PC suitable for casual gaming
+2,Desktop,HP,Windows,Intel Core i7,16 GB,256 GB,1 TB,Integrated,DVD-RW,749,Mid-end PC not quite real gaming level but overkill for just email/browser. Somewhat future-proof.
+3,Desktop,Custom,Linux,AMD Ryzen Threadripper 3970X,64 GB,1 TB,None,Radeon RX 580 8GB,None,3451,Linus Torvalds' PC
+4,Laptop,Dell,Windows,Intel Core i5,8 GB,None,1 TB,Integrated,None,488,OS: Really dual-boot Win/Linux but include Windows for license price. Windows is actually useless since it doesn't have an SSD so we may not want to make this a recommended case (or somehow learn from it)
+5,Desktop,Custom,Windows,AMD Ryzen 9,32 GB,256 GB,4 TB,NVIDIA GT 1030,None,1214,High-end music production. Mostly focused on multicore CPU power. 
+6,Desktop,Custom,Windows,AMD Ryzen 9 ,64 GB,512 GB,4 TB,NVIDIA RTX 3080,None,2055,High-end video production. Balanced build with a high power. Maybe additional drives would be beneficial. 
+7,Desktop,Custom,Windows,AMD Ryzen 3,8 GB,240 GB,None,NVIDIA GT 1030,DVD-RW,459,Low-End Office PC
+8,Desktop,Custom,Windows,Intel Core I3,8 GB,480 GB,None,Integrated,DVD-RW,429,Low-End Office PC
+9,Desktop,Custom,Windows,Intel Core I5,8 GB,480 GB,1 TB,Integrated,DVD-RW,499,Mid-End Office PC
+10,Desktop,Custom,Windows,Intel Core I7,8 GB,480 GB,None,Integrated,DVD-RW,579,High-end Office PC. Quite overkill for an office environment. Also good for not DL related programming
+11,Desktop,Custom,Windows,Intel Core i3,8 GB,480 GB,1 TB,NVIDIA GTX 1650 6 GB,None,639,Low-End Gaming
+12,Desktop,Custom,Windows,Intel Core i5,8 GB,500 GB,None,NVIDIA GTX 1660 Super 6 GB,None,959,Low-Mid end for gaming. Also good for other tasks.
+13,Desktop,Custom,Windows,AMD Ryzen 5,8 GB,500 GB,None,NVIDIA RTX 3060 8GB,None,1549,Mid-end gaming.
+14,Desktop,Custom,Windows,Intel Core i5,16 GB,500 GB,2 TB,NVIDIA RTX 3060 8GB,None,1599,Mid-High end gaming. Future proof with more memory and a hard drive. Also good for some productivity tasks.
+15,Desktop,Custom,Windows,AMD Ryzen 5,16 GB,512 GB,2 TB,NVIDIA RTX 3060 8GB,None,1740,"Mid-High end. Ready for productivity, gaming and light media production tasks."
+16,Desktop,Custom,Windows,AMD Ryzen 7,16 GB,512 GB,None,NVIDIA RTX 3060 8GB,None,1949,"Mid-High end. Ready for productivity, gaming and light media production tasks. Also great for multithreaded applications."
+17,Desktop,Custom,Windows,AMD Ryzen 7 ,16 GB,500 GB,None,NVIDIA RTX 3070 8GB,None,2399,"High end PC. A great bang-for buck high end build. Media production, high resolution gaming, programming and light DL/AI projects."
+18,Desktop,Custom,Windows,AMD Ryzen 9,32 GB,1 TB,None,Radeon RX6900XT 16 GB,None,3949,High end PC. Overkill for a lot of tasks but very future proof. Top of the line system from AMD. Great for multithreaded applications as well as highlt demanding graphical applications and Deep Learning.
+19,Desktop,Custom,Windows,Intel Core i5,16 GB,480 GB,1TB,NVIDIA GTX 1660S 6GB,None,1191,Mid-End gaming.
+20,Desktop,Custom,Windows,AMD Ryzen 5,16 GB,500 GB,1TB,Radeon RX6700XT 12GB,None,1939,High end gaming with high VRAM.
+21,Desktop,Asus,Windows,Intel Core i5,16 GB,512 GB,None,Integrated,None,579,Mid-End Office PC.
+22,Desktop,Lenovo,Windows,Intel Core i5,8 GB,256 GB,None,Integrated,None,469,Low-End Office PC.
+23,Desktop,Custom,Windows,Intel Core i7,32 GB,500 GB,1 TB,NVIDIA RTX 3070 8GB,None,2331,High end gaming with RTX technology from NVIDIA.
