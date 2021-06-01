@@ -1,0 +1,6 @@
+bert-serving-client==1.10.0
+bert-serving-server==1.10.0
+certifi==2021.5.30
+flask==2.0.1
+pip-chill==1.0.1
+tensorflow==1.10
