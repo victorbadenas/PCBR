@@ -10,7 +10,13 @@ if __name__ == '__main__':
     tech_specs = dataset.drop(["Price (€)", "Comments (don't use commas)"], axis=1).values.tolist()
     tech_specs_list = [' '.join(map(str, i)) for i in tech_specs]
 
-    bc = BertClient(check_length=False)
+    bc = BertClient(
+        check_length=False,
+        port=5555,
+        port_out=5556,
+        output_fmt='ndarray',
+        timeout=3000
+    )
     embeddings = bc.encode(tech_specs_list)
     print(embeddings.shape)
 
