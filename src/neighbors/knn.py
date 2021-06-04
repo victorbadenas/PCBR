@@ -2,10 +2,8 @@ import numpy as np
 from scipy.spatial.distance import cdist
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.base import BaseEstimator, ClassifierMixin
-# from neighbors.utils import ndcorrelate
-# from neighbors import metrics
-from utils import ndcorrelate
-import metrics
+from neighbors.utils import ndcorrelate
+from neighbors import metrics
 
 eps = np.finfo(float).eps
 
@@ -23,9 +21,7 @@ VOTING = [MAJORITY, INVERSE_DISTANCE_WEIGHTED, SHEPARDS_WORK]
 
 # weights
 UNIFORM = 'uniform'
-MUTUAL_INFO = 'mutual_info'
-CORRELATION = "correlation"
-WEIGHTS = [UNIFORM, MUTUAL_INFO, CORRELATION]
+WEIGHTS = [UNIFORM]
 
 # distance computation methods
 SCIPY = 'scipy'
@@ -33,7 +29,7 @@ MAT = 'mat'
 DISTANCE_METHODS = [SCIPY, MAT]
 
 
-class kNNAlgorithm(BaseEstimator, ClassifierMixin):
+class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, n_neighbors=5,
                  *, weights='uniform',
                  metric='minkowski',
@@ -52,14 +48,6 @@ class kNNAlgorithm(BaseEstimator, ClassifierMixin):
     def _computeFeatureWeights(self):
         if self.weights == UNIFORM:
             self.w = np.ones((self.trainX.shape[1],))
-        elif self.weights == MUTUAL_INFO:
-            self.w = mutual_info_classif(self.trainX, self.trainLabels)
-        elif self.weights == CORRELATION:
-            self.w = ndcorrelate(self.trainX, self.trainLabels)
-            self.w[self.w < 0] = 0
-            if np.sum(self.w) == 0:
-                print("Correlation weights sum 0, defaulting to uniform weights")
-                self.w = np.ones((self.trainX.shape[1],))
         self.w = self.w / self.w.max()
 
     def fit(self, X, y):
@@ -70,7 +58,8 @@ class kNNAlgorithm(BaseEstimator, ClassifierMixin):
 
     def _fit(self, X, y):
         assert X.shape[0] >= self.k, f"Need a minimum of {self.k} points"
-        self.trainX, self.trainLabels = self._validate_data(X, y)
+        self.trainX = self._validate_data(X)
+        self.trainTargets = y.copy()
         self._computeFeatureWeights()
         return self
 
@@ -79,12 +68,10 @@ class kNNAlgorithm(BaseEstimator, ClassifierMixin):
         distanceMatrix = self.computeDistanceMatrix(X, self.trainX, self.w, self.metric, self.method)
         knnIndexes = self._computeKNNIndex(distanceMatrix)
         knnLabels = self._extractLabels(knnIndexes)
-        decision = self._decide(knnLabels, distanceMatrix)
-        return decision
+        return knnLabels
 
     def _extractLabels(self, knnIndexes):
-        labels = self.trainLabels[knnIndexes]
-        return labels.astype(np.int)
+        return self.trainTargets[knnIndexes]
 
     def _decide(self, knnLabels, distanceMatrix):
         if self.voting == MAJORITY:
@@ -96,7 +83,7 @@ class kNNAlgorithm(BaseEstimator, ClassifierMixin):
         return self._computeDecision(knnLabels, votingWeights)
 
     def _computeDecision(self, knnLabels, votingWeights):
-        numClasses = int(self.trainLabels.max()) + 1
+        numClasses = int(self.trainTargets.max()) + 1
         votes = np.empty((numClasses, *knnLabels.shape), dtype=int)
         for classNum in range(numClasses):
             votes[classNum] = np.where(knnLabels == classNum, 1, 0)
@@ -105,17 +92,13 @@ class kNNAlgorithm(BaseEstimator, ClassifierMixin):
         return np.argmax(finalVotesPerClass, axis=1)
 
     def _computeKNNIndex(self, distanceMatrix):
-        knnIndex = [None]*distanceMatrix.shape[0]
-        for i in range(distanceMatrix.shape[0]):
-            knnIndex[i] = np.argsort(distanceMatrix[i, :])[:self.k]
-        return np.vstack(knnIndex)
+        return np.argsort(distanceMatrix)[:,:self.k]
 
-    @staticmethod
-    def computeDistanceMatrix(X, trainX, w, metric=MINKOWSKI, method=MAT):
+    def computeDistanceMatrix(self, X, trainX, w, metric=MINKOWSKI, method=SCIPY):
         if method == MAT:
-            return kNNAlgorithm._matricialDistanceMatrix(X, trainX, w, metric)
+            return self._matricialDistanceMatrix(X, trainX, w, metric)
         elif method == SCIPY:
-            return kNNAlgorithm._scipyDistanceMatrix(X, trainX, w, metric)
+            return self._scipyDistanceMatrix(X, trainX, w, metric)
 
     @staticmethod
     def _scipyDistanceMatrix(X, trainX, w, metric):
@@ -142,60 +125,9 @@ class kNNAlgorithm(BaseEstimator, ClassifierMixin):
         assert self.metric in DISTANCE_METRICS, f"distance metric \'{self.metric}\' type not supported"
         assert self.method in DISTANCE_METHODS, f"distance computation method \'{self.method}\' not supported"
 
-
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    from pathlib import Path
-
-    N_features = 2
-    classgs = np.array([
-        ((0.75, 0.75) + tuple([0.75]*(N_features-2))),
-        ((0.25, 0.25) + tuple([0.75]*(N_features-2))),
-        ((0.75, 0.25) + tuple([0.75]*(N_features-2))),
-        ((0.25, 0.75) + tuple([0.75]*(N_features-2)))
-    ])
-
-    data = []
-    labels = []
-    data.append(np.random.rand(50, N_features)/2 - 0.25 + ((0.75, 0.75) + tuple([0.75]*(N_features-2))))
-    labels.append(np.zeros((50,)))
-    data.append(np.random.rand(50, N_features)/2 - 0.25 + ((0.25, 0.25) + tuple([0.75]*(N_features-2))))
-    labels.append(np.full((50,), 1))
-    data.append(np.random.rand(50, N_features)/2 - 0.25 + ((0.75, 0.25) + tuple([0.75]*(N_features-2))))
-    labels.append(np.full((50,), 2))
-    data.append(np.random.rand(50, N_features)/2 - 0.25 + ((0.25, 0.75) + tuple([0.75]*(N_features-2))))
-    labels.append(np.full((50,), 3))
-    data = np.vstack(data)
-    labels = np.concatenate(labels)
-
-    newData = np.random.rand(50, N_features)
-    newLabels = np.argmin(cdist(newData, classgs), axis=1)
-
-    def plotModelTrial(trainData, testData, trainLabels, testLabels, classgs):
-        plt.figure(figsize=(15, 9))
-        for label, c in zip(np.unique(trainLabels), 'rgby'):
-            subData = trainData[trainLabels == label]
-            subNewData = testData[testLabels == label]
-            plt.scatter(subData[:, 0], subData[:, 1], c=c, marker='+')
-            plt.scatter(subNewData[:, 0], subNewData[:, 1], c=c, marker='x')
-        # plt.scatter(classgs[:, 0], classgs[:, 1], c='k', marker='o')
-        plt.vlines(0.5, 0, 1, colors='k', linestyles='dashed')
-        plt.hlines(0.5, 0, 1, colors='k', linestyles='dashed')
-        plt.xlim(0, 1)
-        plt.ylim(0, 1)
-        plt.xticks([i/4 for i in range(5)])
-        plt.yticks([i/4 for i in range(5)])
-        plt.grid('on')
-
-    plotModelTrial(data, newData, labels, newLabels, classgs)
-    plt.show()
-
-    print(f"train dataset size: {data.shape}, test dataset size: {newData.shape}")
-    for d in DISTANCE_METRICS:
-        for v in VOTING:
-            for w in WEIGHTS:
-                for m in [MAT]:
-                    print(f"distance: {d}, voting: {v}, weights: {w}, method {m}")
-                    knn = kNNAlgorithm(metric=d, voting=v, weights=w, method=m)
-                    pred_labels = knn.fit(data, labels).predict(newData)
-                    print(pred_labels)
+    N_features = 4
+    X = np.random.rand(3, 4)
+    y = np.eye(3) # one hot encoded labels
+    clf = KNeighborsClassifier(1).fit(X, y)
+    pred = clf.predict(X)[:,0,:]
