@@ -130,3 +130,7 @@ dmypy.json
 
 # project folders
 models/
+
+# cscope/ctags
+tags
+cscope.out
