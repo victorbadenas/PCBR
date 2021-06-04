@@ -1,3 +1,16 @@
+"""
+.. module:: KNeighborsClassifier
+KNeighborsClassifier
+*************
+:Description: KNeighborsClassifier
+    
+:Version: 0.1.0
+:Created on: 01/06/2021 11:00 
+"""
+
+__title__ = 'KNeighborsClassifier'
+__version__ = '0.1.0'
+
 import numpy as np
 from scipy.spatial.distance import cdist
 from sklearn.feature_selection import mutual_info_classif
@@ -13,12 +26,6 @@ MINKOWSKI = 'minkowski'
 EUCLIDEAN = 'minkowski2'
 DISTANCE_METRICS = [COSINE, MINKOWSKI, EUCLIDEAN]
 
-# voting options
-MAJORITY = 'majority'
-INVERSE_DISTANCE_WEIGHTED = 'idw'
-SHEPARDS_WORK = 'sheppards'
-VOTING = [MAJORITY, INVERSE_DISTANCE_WEIGHTED, SHEPARDS_WORK]
-
 # weights
 UNIFORM = 'uniform'
 WEIGHTS = [UNIFORM]
@@ -30,33 +37,76 @@ DISTANCE_METHODS = [SCIPY, MAT]
 
 
 class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
+    __version__ = '0.1.0'
+    __doc__ = ""
     def __init__(self, n_neighbors=5,
                  *, weights='uniform',
                  metric='minkowski',
                  voting='majority',
-                 p=1,
                  method='scipy'):
+        """KNeighborsClassifier object
 
+        Args:
+            n_neighbors (int, optional): [ number of neighbors to extract]. 
+                Defaults to 5.
+            weights (str, optional): [options for computing the weight of 
+                each of the features. Not supported right now]. Defaults to 'uniform'.
+            metric (str, optional): [distance used to compute the distance matrixes. 
+                Available options are: "cosine", "minkowski" or "euclidean"]. Defaults to 'minkowski'.
+            method (str, optional): [method for computing the distance matrix. 
+                'scipy' uses scipy.distance.cdist to compute the distances, 
+                which is more efficient in memory. 'mat' computes the distances faster 
+                but uses more memory]. Defaults to 'scipy'.
+        """
         self.k = n_neighbors
-        self.voting = voting
         self.weights = weights
         self.metric = metric
-        self.p = p
         self.method = method
         self._validateParameters()
 
     def _computeFeatureWeights(self):
+        """computes the weight for each one of the features.
+        currenly not supported and it defaults to uniform.
+        """
         if self.weights == UNIFORM:
             self.w = np.ones((self.trainX.shape[1],))
         self.w = self.w / self.w.max()
 
     def fit(self, X, y):
+        """fit object to training data
+
+        Args:
+            X ([np.ndarray, pd.DataFrame]): [training data of shape (n_samples, n_origin_features)]
+            y ([np.ndarray]): [array of shape (n_samples, n_target_features) or (n_samples,) 
+            if the classification returns an integer value.]
+
+        Returns:
+            [KNeighborsClassifier]: [fitted classifier]
+        """
         return self._fit(X, y)
 
     def predict(self, X):
+        """inference function to assign the closest point in the training data to each instance in X
+
+        Args:
+            X ([np.ndarray]): [of shape (n_samples, n_origin_features)]
+
+        Returns:
+            [np.ndarray]: [of shape (n_samples, n_neighbors, n_target_features)]
+        """
         return self._predict(X)
 
     def _fit(self, X, y):
+        """internal fit method. Validates the data, computes feature weights and stores the training data in memory.
+
+        Args:
+            X ([np.ndarray, pd.DataFrame]): [training data of shape (n_samples, n_origin_features)]
+            y ([np.ndarray]): [array of shape (n_samples, n_target_features) or (n_samples,) 
+            if the classification returns an integer value.]
+
+        Returns:
+            [KNeighborsClassifier]: [fitted classifier]
+        """        
         assert X.shape[0] >= self.k, f"Need a minimum of {self.k} points"
         self.trainX = self._validate_data(X)
         self.trainTargets = y.copy()
@@ -64,6 +114,14 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
         return self
 
     def _predict(self, X):
+        """internal inference method to assign the closest point in the training data to each instance in X
+
+        Args:
+            X ([np.ndarray]): [of shape (n_samples, n_origin_features)]
+
+        Returns:
+            [np.ndarray]: [of shape (n_samples, n_neighbors, n_target_features)]
+        """
         X = self._validate_data(X)
         distanceMatrix = self.computeDistanceMatrix(X, self.trainX, self.w, self.metric, self.method)
         knnIndexes = self._computeKNNIndex(distanceMatrix)
@@ -71,30 +129,18 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
         return knnLabels
 
     def _extractLabels(self, knnIndexes):
+        """maps the best indexes to the labels that correspond to those instances.
+        """
         return self.trainTargets[knnIndexes]
 
-    def _decide(self, knnLabels, distanceMatrix):
-        if self.voting == MAJORITY:
-            votingWeights = np.ones_like(knnLabels)
-        elif self.voting == INVERSE_DISTANCE_WEIGHTED:
-            votingWeights = 1 / (distanceMatrix[:, :self.k] + eps) ** self.p
-        elif self.voting == SHEPARDS_WORK:
-            votingWeights = np.exp(-1*distanceMatrix[:, :self.k])
-        return self._computeDecision(knnLabels, votingWeights)
-
-    def _computeDecision(self, knnLabels, votingWeights):
-        numClasses = int(self.trainTargets.max()) + 1
-        votes = np.empty((numClasses, *knnLabels.shape), dtype=int)
-        for classNum in range(numClasses):
-            votes[classNum] = np.where(knnLabels == classNum, 1, 0)
-        weightedVotes = np.expand_dims(votingWeights, axis=0) * votes
-        finalVotesPerClass = np.sum(weightedVotes, axis=2).T
-        return np.argmax(finalVotesPerClass, axis=1)
-
     def _computeKNNIndex(self, distanceMatrix):
+        """extracts the indexes for the best k elements in the training data.
+        """
         return np.argsort(distanceMatrix)[:,:self.k]
 
     def computeDistanceMatrix(self, X, trainX, w, metric=MINKOWSKI, method=SCIPY):
+        """computes the distance matrix. Switches between matricial or cdist operations.
+        """
         if method == MAT:
             return self._matricialDistanceMatrix(X, trainX, w, metric)
         elif method == SCIPY:
@@ -102,6 +148,8 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
 
     @staticmethod
     def _scipyDistanceMatrix(X, trainX, w, metric):
+        """generates instance matrixes for cdist option. switches between distance types.
+        """
         if metric == EUCLIDEAN:
             return cdist(X, trainX, metric=MINKOWSKI, p=2, w=w)
         elif metric == MINKOWSKI:
@@ -110,6 +158,8 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
 
     @staticmethod
     def _matricialDistanceMatrix(X, trainX, w, metric):
+        """generates instance matrixes for matricial option. switches between distance types.
+        """
         if metric == COSINE:
             return metrics.cosineDistance(X, trainX, w=w)
         elif metric == MINKOWSKI:
@@ -119,8 +169,6 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
 
     def _validateParameters(self):
         assert self.k > 0, f"n_neighbors must be positive, not \'{self.k}\'"
-        assert self.p > 0 and isinstance(self.p, int), f"p for distance voting must be a positive int"
-        assert self.voting in VOTING, f"voting \'{self.voting}\' type not supported"
         assert self.weights in WEIGHTS, f"weights \'{self.weights}\' type not supported"
         assert self.metric in DISTANCE_METRICS, f"distance metric \'{self.metric}\' type not supported"
         assert self.method in DISTANCE_METHODS, f"distance computation method \'{self.method}\' not supported"

@@ -8,7 +8,7 @@ from neighbors.knn import KNeighborsClassifier
 
 
 class TestNeighbors(unittest.TestCase):
-    
+
     def test_neighbors(self):
         N_features = 4
         X = np.random.rand(3, 4)
