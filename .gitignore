@@ -130,3 +130,6 @@ dmypy.json
 
 # project folders
 models/
+
+# IntelliJ .idea folder
+.idea/
