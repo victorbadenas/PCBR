@@ -15,8 +15,8 @@ import numpy as np
 from scipy.spatial.distance import cdist
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.base import BaseEstimator, ClassifierMixin
-from neighbors.utils import ndcorrelate
-from neighbors import metrics
+from .utils import ndcorrelate
+from . import metrics
 
 eps = np.finfo(float).eps
 

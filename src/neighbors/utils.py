@@ -26,10 +26,10 @@ def timer(print_=False):
     return inner2
 
 
-def separateOutput(msg):
+def separateOutput(msg:str):
     def inner2(f):
         def inner(*args, **kwargs):
-            print(f"---------------------{msg}---------------------")
+            print(msg.center(80, '-'))
             return f(*args, **kwargs)
         return inner
     return inner2
