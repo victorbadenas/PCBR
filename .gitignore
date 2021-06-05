@@ -137,3 +137,6 @@ models/
 # cscope/ctags
 tags
 cscope.out
+
+# Editor temporary files
+*.swp
