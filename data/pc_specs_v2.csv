@@ -1,0 +1,30 @@
+ID,CPU,RAM (GB),SSD (GB),HDD (GB),GPU,"Optical Drive (1 = DVD, 0 = None)",Price (€),Experience,WFH,Primary use,Budget,Replace (1-most frequent; 4-least frequent),Office,Photoshop,VideoChat,ML,Compilers,HighPerformanceGames,LowPerformanceGames,Comments (don't use commas)
+0,Intel Core i5-11600,16,256,1000,Integrated,1,499,1,1,Home,1,4,1,0,0,0,0,0,1,Mid/low-end PC for casual email/browser use. If Win10 SSD absolutely required.
+1,Intel Core i7-10700,16,256,2000,GeForce GTX 1650,1,916,2,1,Gaming,2,2,0,0,1,0,0,1,1,Mid-end PC suitable for casual gaming
+2,Intel Core i7-11700,16,256,1000,Integrated,1,749,2,1,Programming,1,3,1,0,0,0,1,0,0,Mid-end PC not quite real gaming level but overkill for just email/browser. Somewhat future-proof.
+3,AMD Ryzen 9 5950X,64,1000,0,Radeon RX 580,0,3451,5,1,Programming,3,3,1,0,0,1,1,0,0,Linus Torvalds' PC
+4,Intel Core i7-11700,8,256,0,Integrated,1,832,1,1,Home,2,2,1,0,1,0,0,0,1,Mid-end home business PC.
+5,AMD Ryzen 9 5900X,32,256,4000,GeForce GT 1030,0,1214,3,1,Production,2,2,1,1,1,0,0,1,1,High-end music production. Mostly focused on multicore CPU power. 
+6,AMD Ryzen 9 5900X,64,512,4000,GeForce RTX 3080,0,2055,4,1,Production,3,3,1,1,1,0,0,1,1,High-end video production. Balanced build with a high power. Maybe additional drives would be beneficial. 
+7,AMD Ryzen 3 3300X,8,240,0,GeForce GT 1030,1,459,1,1,Work,1,1,1,0,1,0,0,0,0,Low-End Office PC
+8,Intel Core i3-10320,8,480,0,Integrated,1,429,1,0,Work,1,2,1,0,0,0,0,0,0,Low-End Office PC
+9,Intel Core i5-11600,8,480,1000,Integrated,1,499,1,1,Work,1,2,1,0,1,0,0,0,0,Mid-End Office PC
+10,Intel Core i7-10700,8,480,0,Integrated,1,579,2,1,Programming,1,2,0,0,1,0,1,0,0,High-end Office PC. Quite overkill for an office environment. Also good for not DL related programming
+11,Intel Core i3-10320,8,480,1000,GeForce GTX 1650,0,639,2,0,Gaming,1,1,0,0,0,0,0,0,1,Low-End Gaming
+12,Intel Core i5-11600,8,500,0,GeForce GTX 1660 SUPER,0,959,3,1,Gaming,2,2,0,0,1,0,0,1,1,Low-Mid end for gaming. Also good for other tasks.
+13,AMD Ryzen 5 5600X,8,500,0,GeForce RTX 3060,0,1549,2,1,Gaming,2,2,0,0,1,0,0,1,1,Mid-end gaming.
+14,Intel Core i5-11600K,16,500,2000,GeForce RTX 3060,0,1599,4,1,Gaming,2,3,0,0,1,0,0,1,1,Mid-High end gaming. Future proof with more memory and a hard drive. Also good for some productivity tasks.
+15,AMD Ryzen 5 5600X,16,512,2000,GeForce RTX 3060,0,1740,4,1,Gaming,2,3,0,0,1,0,0,1,1,"Mid-High end. Ready for productivity, gaming and light media production tasks."
+16,AMD Ryzen 7 5800X,16,512,0,GeForce RTX 3060,0,1949,4,1,Gaming,3,3,0,0,1,0,0,1,1,"Mid-High end. Ready for productivity, gaming and light media production tasks. Also great for multithreaded applications."
+17,AMD Ryzen 7 5800X,16,500,0,GeForce RTX 3060,0,2399,4,1,ML,3,3,1,0,0,1,1,0,0,"High end PC. A great bang-for buck high end build. Media production, high resolution gaming, programming and light DL/AI projects."
+18,AMD Ryzen 9 5950X,32,1000,0,Radeon RX 6900 XT,0,3949,5,1,ML,3,4,1,0,0,1,1,0,0,High end PC. Overkill for a lot of tasks but very future proof. Top of the line system from AMD. Great for multithreaded applications as well as highlt demanding graphical applications and Deep Learning.
+19,Intel Core i5-11600K,16,480,1000,GeForce GTX 1660 SUPER,0,1191,3,1,Gaming,2,2,0,0,1,0,0,1,1,Mid-End gaming.
+20,AMD Ryzen 5 5600X,16,500,1000,Radeon RX 6700 XT,0,1939,4,1,Gaming,3,3,0,0,1,0,0,1,1,High end gaming with high VRAM.
+21,Intel Core i5-11600,16,512,0,Integrated,0,579,2,1,Work,1,2,1,0,1,0,0,0,0,Mid-End Office PC.
+22,Intel Core i5-11600,8,256,0,Integrated,0,469,1,1,Work,1,1,1,0,1,0,0,0,0,Low-End Office PC.
+23,Intel Core i7-11700K,32,500,1000,GeForce RTX 3070,0,2331,4,1,Gaming,3,3,0,0,1,0,0,1,1,High end gaming with RTX technology from NVIDIA.
+24,Intel Core i3-10320,8,256,0,Integrated,0,427,1,0,Work,1,1,1,0,0,0,0,0,0,Low-end business PC.
+25,Intel Core i7-11700,16,512,0,Integrated,1,989,3,1,Work,2,3,1,0,1,0,0,0,0,Mid-end business PC.
+26,AMD Ryzen 5 5600X,16,512,0,GeForce GT 1030,0,649,3,1,Work,1,1,0,0,0,0,0,0,1,Low-end gaming or mid-end business.
+27,Intel Core i7-11700,16,1024,0,GeForce GTX 1660 SUPER,0,999,3,1,ML,2,2,1,0,1,1,1,0,0,Mid-end gaming or low/mid-end machine learning PC
+28,AMD Ryzen 9 5900X,64,1024,2000,GeForce RTX 3080,0,3459,5,1,ML,3,3,1,1,1,1,1,0,0,"High-end gaming, music/video-production or machine learning PC."
