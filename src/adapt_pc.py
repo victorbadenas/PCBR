@@ -47,6 +47,8 @@ class AdaptPC:
 
     def check_constraints(self, solution, constraints):
         print('checking constraints...')
+        print(constraints)
+        print('cpu brand: ' + str(constraints.cpu_brand))
         return
 
     def check_compatibility(self, solution):
