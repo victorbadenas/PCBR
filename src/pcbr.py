@@ -6,7 +6,7 @@ from neighbors.knn import KNeighborsClassifier
 from adapt_pc import AdaptPC
 
 class PCBR:
-    def __init__(self, cbl_path='../data/pc_specs_v2.csv',
+    def __init__(self, cbl_path='../data/pc_specs.csv',
                        cpu_path='../data/cpu_table.csv',
                        gpu_path='../data/gpu_table.csv'):
         case_library = read_initial_cbl(path=cbl_path, cpu_path=cpu_path, gpu_path=gpu_path)

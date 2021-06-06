@@ -12,7 +12,7 @@ def read_gpu_table(path='data/gpu_table.csv'):
     return pd.read_csv(path)
 
 
-def read_initial_cbl(path='data/pc_specs_v2.csv', 
+def read_initial_cbl(path='data/pc_specs.csv', 
                      gpu_path='data/gpu_table.csv', 
                      cpu_path='data/cpu_table.csv'):
     df = pd.read_csv(path)
