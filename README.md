@@ -26,7 +26,7 @@ Unittest are located in the `./test/` folder. Each unittest must follow the foll
 ```python
 import unittest
 
-class TestCase(uniitest.TestCase):
+class TestCase(unittest.TestCase)):
     def test_whatever(self):
         a = 1
         # do something with a
