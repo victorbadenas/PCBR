@@ -1,9 +1,13 @@
 import os, sys
 sys.path.append(os.path.dirname(__file__))
+from collections import namedtuple
 
 from data.preprocessor import read_initial_cbl, read_cpu_table, read_gpu_table
 from neighbors.knn import KNeighborsClassifier
 from adapt_pc import AdaptPC
+from constraints import Constraints
+
+UserRequest = namedtuple('UserRequest', ['instance', 'constraints'])
 
 class PCBR:
     def __init__(self, cbl_path='../data/pc_specs.csv',
@@ -25,7 +29,9 @@ class PCBR:
         # For now, appears "None" is handled well by retrieve step and it defaults to a case in the library
         # Either need to pre-process the request here or in the retrieve step.
         # Also need to pass along some extra metadata, such as constraints.
-        return None
+        constraints=Constraints()
+        userReqRv=UserRequest(None,constraints)
+        return userReqRv
 
     def retrieve(self, newInstance=None, n_neighbors=2):
         if newInstance is None:
@@ -44,9 +50,9 @@ class PCBR:
 if __name__ == '__main__':
     pcbr = PCBR()
     userRequest = pcbr.get_user_request()
-    nearestCases = pcbr.retrieve(newInstance=userRequest)
+    nearestCases = pcbr.retrieve(newInstance=userRequest.instance)
     print(nearestCases, nearestCases.shape)
-    proposedSolution = pcbr.reuse(nearestCases[0,0]) # Just pass one for now, but may want the 2nd-nearest neighbor too
+    proposedSolution = pcbr.reuse(nearestCases[0,0],userRequest.constraints) # Just pass one for now, but may want the 2nd-nearest neighbor too
     # Uncomment as these functions get implemented
     #revisionResult=pcbr.revise(proposedSolution)
     #pcbr.retain(proposedSolution, revisionResult)
