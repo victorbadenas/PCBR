@@ -2,7 +2,7 @@ import os, sys
 sys.path.append(os.path.dirname(__file__))
 from collections import namedtuple
 
-from data.preprocessor import read_initial_cbl, read_cpu_table, read_gpu_table
+from data.preprocessor import read_initial_cbl, read_table
 from neighbors.knn import KNeighborsClassifier
 from adapt_pc import AdaptPC
 from constraints import Constraints
@@ -12,16 +12,33 @@ UserRequest = namedtuple('UserRequest', ['instance', 'constraints'])
 class PCBR:
     def __init__(self, cbl_path='../data/pc_specs.csv',
                        cpu_path='../data/cpu_table.csv',
-                       gpu_path='../data/gpu_table.csv'):
+                       gpu_path='../data/gpu_table.csv',
+                       ssd_path='../data/ssd_table.csv',
+                       hdd_path='../data/hdd_table.csv',
+                       opt_drive_path='../data/optical_drive_table.csv'):
+
+        # read case library
         case_library = read_initial_cbl(path=cbl_path, cpu_path=cpu_path, gpu_path=gpu_path)
+
         # Split into "source" (preferences) and "target" (PC specs)
-        self.target_attributes = case_library[:, :7]
-        self.source_attributes = case_library[:, 7:]
-        self.cpu_table = read_cpu_table(path=cpu_path)
-        self.gpu_table = read_gpu_table(path=gpu_path)
+        self.target_attributes = case_library[case_library.columns[:7]]
+        self.source_attributes = case_library[case_library.columns[7:]]
+
+        # read component's tables
+        self.cpu_table = read_table(path=cpu_path, index_col=0)
+        self.gpu_table = read_table(path=gpu_path, index_col=0)
+        self.ssd_table = read_table(path=ssd_path, index_col=0)
+        self.hdd_table = read_table(path=hdd_path, index_col=0)
+        self.opt_drive_table = read_table(path=opt_drive_path, index_col=0)
+
         print('case library: ' + str(case_library.shape))
         print('cpu table: ' + str(self.cpu_table.shape))
         print('gpu table: ' + str(self.gpu_table.shape))
+        print('ssd_table: ' + str(self.ssd_table.shape))
+        print('hdd_table: ' + str(self.hdd_table.shape))
+        print('opt_drive_table: ' + str(self.opt_drive_table.shape))
+
+        # initialize the adapt_pc object
         self.adapt_pc = AdaptPC(self.cpu_table, self.gpu_table)
 
     def get_user_request(self):
