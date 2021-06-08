@@ -20,10 +20,10 @@ class AdaptPC:
         """
         self.pcbr=pcbr
 
-    def adapt(self, fromCaseBase, constraints=None):
+    def adapt(self, nearest_neighbors, user_request):
         """start with case from case base and then apply domain knowlege to adapt it to user's needs
         """
-        adaptedSolution = fromCaseBase.copy()
+        adapted_solution = nearest_neighbors[0,0].copy()
 
         # Use domain knowledge to adapt it
 
@@ -31,20 +31,20 @@ class AdaptPC:
         good_enough = False
         while not good_enough:
             # First check if there are any unmet constraints
-            self.check_constraints(adaptedSolution,constraints)
+            self.check_constraints(adapted_solution,user_request.constraints)
 
             # Next check if there are any HW incompatibilities
-            self.check_compatibility(adaptedSolution)
+            self.check_compatibility(adapted_solution)
 
             # Check if there are any optimizations
-            self.check_optimizations(adaptedSolution)
+            self.check_optimizations(adapted_solution)
 
             good_enough = True
 
         # May need to convert from benchmark to CPU/GPU here? Adapted solution probably needs a bit more
         # than just the numeric data
 
-        return adaptedSolution
+        return adapted_solution
 
     def check_constraints(self, solution, constraints):
         reuse_logger.debug('checking constraints...')
