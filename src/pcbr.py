@@ -52,9 +52,9 @@ class PCBR:
 
     def retrieve(self, newInstance=None, n_neighbors=2):
         if newInstance is None:
-            newInstance = self.source_attributes[2].reshape(1, -1)
+            newInstance = self.source_attributes.iloc[2].to_numpy().reshape(1, -1)
         print('looking for: ' + str(newInstance))
-        clf = KNeighborsClassifier(n_neighbors=2).fit(self.source_attributes, self.target_attributes)
+        clf = KNeighborsClassifier(n_neighbors=2).fit(self.source_attributes.to_numpy(), self.target_attributes.to_numpy())
         return clf.predict(newInstance)
 
     def reuse(self, newInstance=None, constraints=None):
