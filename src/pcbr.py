@@ -106,14 +106,6 @@ class PCBR:
         self.hdd_mapper = Mapper.from_csv(path=hdd_path, scaler_columns=['Capacity'], scaler=self.transformations['HDD (GB)'])
         self.opt_drive_mapper = Mapper.from_csv(path=opt_drive_path, scaler=self.transformations['Optical Drive (1 = DVD, 0 = None)'])
 
-        pcbr_logger.debug('case library: ' + str(case_library.shape))
-        pcbr_logger.debug('cpu table: ' + str(self.cpu_table.shape))
-        pcbr_logger.debug('gpu table: ' + str(self.gpu_table.shape))
-        pcbr_logger.debug('ram table: ' + str(self.ram_table.shape))
-        pcbr_logger.debug('ssd_table: ' + str(self.ssd_table.shape))
-        pcbr_logger.debug('hdd_table: ' + str(self.hdd_table.shape))
-        pcbr_logger.debug('opt_drive_table: ' + str(self.opt_drive_table.shape))
-
         # initialize the adapt_pc object
         self.adapt_pc = AdaptPC(self)
         pcbr_logger.info('Initialization complete!')
