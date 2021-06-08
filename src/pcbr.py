@@ -2,12 +2,33 @@ import os, sys
 sys.path.append(os.path.dirname(__file__))
 from collections import namedtuple
 
+import logging
+
 from data.preprocessor import read_initial_cbl, read_table
 from neighbors.knn import KNeighborsClassifier
 from adapt_pc import AdaptPC
 from constraints import Constraints
 
+# Logger objects
+pcbr_logger=logging.getLogger('pcbr')
+retrieve_logger=logging.getLogger('retrieve')
+reuse_logger=logging.getLogger('reuse')
+revise_logger=logging.getLogger('revise')
+retain_logger=logging.getLogger('retain')
+
 UserRequest = namedtuple('UserRequest', ['instance', 'constraints'])
+
+def setup_logging():
+    # Set up logging subsystem. Level should be one of: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET
+    logging.basicConfig()
+
+    # Choose the modules whose output you want to see here. INFO is a good default level, but DEBUG
+    # may be useful during development of your module
+    pcbr_logger.setLevel(logging.INFO)
+    retrieve_logger.setLevel(logging.INFO)
+    reuse_logger.setLevel(logging.INFO)
+    revise_logger.setLevel(logging.INFO)
+    retain_logger.setLevel(logging.INFO)
 
 class PCBR:
     def __init__(self, cbl_path='../data/pc_specs.csv',
@@ -17,6 +38,7 @@ class PCBR:
                        hdd_path='../data/hdd_table.csv',
                        opt_drive_path='../data/optical_drive_table.csv'):
 
+        pcbr_logger.info('Initializing...')
         # read case library
         case_library = read_initial_cbl(path=cbl_path, cpu_path=cpu_path, gpu_path=gpu_path)
 
@@ -31,15 +53,16 @@ class PCBR:
         self.hdd_table = read_table(path=hdd_path, index_col=0)
         self.opt_drive_table = read_table(path=opt_drive_path, index_col=0)
 
-        print('case library: ' + str(case_library.shape))
-        print('cpu table: ' + str(self.cpu_table.shape))
-        print('gpu table: ' + str(self.gpu_table.shape))
-        print('ssd_table: ' + str(self.ssd_table.shape))
-        print('hdd_table: ' + str(self.hdd_table.shape))
-        print('opt_drive_table: ' + str(self.opt_drive_table.shape))
+        pcbr_logger.debug('case library: ' + str(case_library.shape))
+        pcbr_logger.debug('cpu table: ' + str(self.cpu_table.shape))
+        pcbr_logger.debug('gpu table: ' + str(self.gpu_table.shape))
+        pcbr_logger.debug('ssd_table: ' + str(self.ssd_table.shape))
+        pcbr_logger.debug('hdd_table: ' + str(self.hdd_table.shape))
+        pcbr_logger.debug('opt_drive_table: ' + str(self.opt_drive_table.shape))
 
         # initialize the adapt_pc object
         self.adapt_pc = AdaptPC(self.cpu_table, self.gpu_table)
+        pcbr_logger.info('Initialization complete!')
 
     def get_user_request(self):
         # Request input here and return it.
@@ -53,22 +76,25 @@ class PCBR:
     def retrieve(self, newInstance=None, n_neighbors=2):
         if newInstance is None:
             newInstance = self.source_attributes.iloc[2].to_numpy().reshape(1, -1)
-        print('looking for: ' + str(newInstance))
+        pcbr_logger.debug('looking for: ' + str(newInstance))
         clf = KNeighborsClassifier(n_neighbors=2).fit(self.source_attributes.to_numpy(), self.target_attributes.to_numpy())
         return clf.predict(newInstance)
 
     def reuse(self, newInstance=None, constraints=None):
         assert(newInstance is not None)
-        print('starting with: ' + str(newInstance))
+        pcbr_logger.debug('starting with: ' + str(newInstance))
         adaptedCase = self.adapt_pc.adapt(newInstance,constraints)
-        print('adapted to: ' + str(adaptedCase))
+        pcbr_logger.debug('adapted to: ' + str(adaptedCase))
         return adaptedCase
 
 if __name__ == '__main__':
+    setup_logging()
+
     pcbr = PCBR()
     userRequest = pcbr.get_user_request()
     nearestCases = pcbr.retrieve(newInstance=userRequest.instance)
-    print(nearestCases, nearestCases.shape)
+    pcbr_logger.debug(nearestCases)
+    pcbr_logger.debug(nearestCases.shape)
     proposedSolution = pcbr.reuse(nearestCases[0,0],userRequest.constraints) # Just pass one for now, but may want the 2nd-nearest neighbor too
     # Uncomment as these functions get implemented
     #revisionResult=pcbr.revise(proposedSolution)

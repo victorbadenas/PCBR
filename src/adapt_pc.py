@@ -1,4 +1,5 @@
 # System/standard imports
+import logging
 import numpy
 
 # Our imports
@@ -6,6 +7,7 @@ import numpy
 # Constants
 
 # Module-global data
+reuse_logger=logging.getLogger('reuse')
 
 # Function definitions
 
@@ -46,17 +48,17 @@ class AdaptPC:
         return adaptedSolution
 
     def check_constraints(self, solution, constraints):
-        print('checking constraints...')
-        print(constraints)
-        print('cpu brand: ' + str(constraints.cpu_brand))
+        reuse_logger.debug('checking constraints...')
+        reuse_logger.debug(constraints)
+        reuse_logger.debug('cpu brand: ' + str(constraints.cpu_brand))
         return
 
     def check_compatibility(self, solution):
-        print('checking compatibility...')
+        reuse_logger.debug('checking compatibility...')
         # if CPU==AMD GPU can't be Integrated
         # if task==(ML|Gaming) require GPU
         return
 
     def check_optimizations(self, solution):
-        print('checking for additional optimizations...')
+        reuse_logger.debug('checking for additional optimizations...')
         return
