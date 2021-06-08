@@ -5,6 +5,7 @@ from collections import namedtuple
 import logging
 
 from data.preprocessor import read_initial_cbl, read_table
+from data.mapper import Mapper
 from neighbors.knn import KNeighborsClassifier
 from adapt_pc import AdaptPC
 from constraints import Constraints
@@ -34,28 +35,39 @@ class PCBR:
     def __init__(self, cbl_path='../data/pc_specs.csv',
                        cpu_path='../data/cpu_table.csv',
                        gpu_path='../data/gpu_table.csv',
+                       ram_path='../data/ram_table.csv',
                        ssd_path='../data/ssd_table.csv',
                        hdd_path='../data/hdd_table.csv',
                        opt_drive_path='../data/optical_drive_table.csv'):
 
         pcbr_logger.info('Initializing...')
+        # read mappers
         # read case library
-        case_library = read_initial_cbl(path=cbl_path, cpu_path=cpu_path, gpu_path=gpu_path)
+        case_library, self.transformations = read_initial_cbl(path=cbl_path, 
+            cpu_path=cpu_path,
+            gpu_path=gpu_path,
+            ram_path=ram_path,
+            ssd_path=ssd_path,
+            hdd_path=hdd_path,
+            opt_drive_path=opt_drive_path
+        )
 
         # Split into "source" (preferences) and "target" (PC specs)
         self.target_attributes = case_library[case_library.columns[:7]]
         self.source_attributes = case_library[case_library.columns[7:]]
 
         # read component's tables
-        self.cpu_table = read_table(path=cpu_path, index_col=0)
-        self.gpu_table = read_table(path=gpu_path, index_col=0)
-        self.ssd_table = read_table(path=ssd_path, index_col=0)
-        self.hdd_table = read_table(path=hdd_path, index_col=0)
-        self.opt_drive_table = read_table(path=opt_drive_path, index_col=0)
+        self.cpu_mapper = Mapper.from_csv(path=cpu_path, scaler_columns=['CPU Mark'], scaler=self.transformations['CPU'])
+        self.gpu_mapper = Mapper.from_csv(path=gpu_path, scaler_columns=['Benchmark'], scaler=self.transformations['GPU'])
+        self.ram_mapper = Mapper.from_csv(path=ram_path, scaler_columns=['Capacity'], scaler=self.transformations['RAM (GB)'])
+        self.ssd_mapper = Mapper.from_csv(path=ssd_path, scaler_columns=['Capacity'], scaler=self.transformations['SSD (GB)'])
+        self.hdd_mapper = Mapper.from_csv(path=hdd_path, scaler_columns=['Capacity'], scaler=self.transformations['HDD (GB)'])
+        self.opt_drive_mapper = Mapper.from_csv(path=opt_drive_path, scaler=self.transformations['Optical Drive (1 = DVD, 0 = None)'])
 
         pcbr_logger.debug('case library: ' + str(case_library.shape))
         pcbr_logger.debug('cpu table: ' + str(self.cpu_table.shape))
         pcbr_logger.debug('gpu table: ' + str(self.gpu_table.shape))
+        pcbr_logger.debug('ram table: ' + str(self.ram_table.shape))
         pcbr_logger.debug('ssd_table: ' + str(self.ssd_table.shape))
         pcbr_logger.debug('hdd_table: ' + str(self.hdd_table.shape))
         pcbr_logger.debug('opt_drive_table: ' + str(self.opt_drive_table.shape))
