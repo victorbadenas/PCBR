@@ -15,11 +15,10 @@ reuse_logger=logging.getLogger('reuse')
 class AdaptPC:
     """class used to perform the Reuse function and adapt a case to the input request
     """
-    def __init__(self, cpu_table, gpu_table):
+    def __init__(self, pcbr):
         """initialize the Reuse class and load domain knowledge/rules/etc.
         """
-        self.cpu_table = cpu_table
-        self.gpu_table = gpu_table
+        self.pcbr=pcbr
 
     def adapt(self, fromCaseBase, constraints=None):
         """start with case from case base and then apply domain knowlege to adapt it to user's needs

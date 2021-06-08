@@ -61,7 +61,7 @@ class PCBR:
         pcbr_logger.debug('opt_drive_table: ' + str(self.opt_drive_table.shape))
 
         # initialize the adapt_pc object
-        self.adapt_pc = AdaptPC(self.cpu_table, self.gpu_table)
+        self.adapt_pc = AdaptPC(self)
         pcbr_logger.info('Initialization complete!')
 
     def get_user_request(self):
