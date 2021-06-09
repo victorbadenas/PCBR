@@ -63,7 +63,7 @@ class Mapper:
         source_data = self.data[from_col].to_numpy()
         target_data = self.data[to_col].to_numpy()
         if is_numeric(source_data):
-            nn_index = np.argmin(np.abs(source_data[None, :] - X[:, None]), axis=1)
+            nn_index = np.argmin(np.abs(np.subtract(source_data, X)))
             return target_data[nn_index]
         else:
             map_dict = dict(zip(source_data, target_data))

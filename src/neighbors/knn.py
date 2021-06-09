@@ -11,8 +11,8 @@ KNeighborsClassifier
 __title__ = 'KNeighborsClassifier'
 __version__ = '0.1.0'
 
-import metrics
 import numpy as np
+from . import metrics
 from scipy.spatial.distance import cdist
 from sklearn.base import BaseEstimator, ClassifierMixin
 
@@ -124,7 +124,7 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
         distanceMatrix = self.computeDistanceMatrix(X, self.trainX, self.w, self.metric, self.method)
         knnIndexes = self._computeKNNIndex(distanceMatrix)
         knnLabels = self._extractLabels(knnIndexes)
-        return knnLabels
+        return knnLabels, np.sort(distanceMatrix)[:, :self.k]
 
     def _extractLabels(self, knnIndexes):
         """maps the best indexes to the labels that correspond to those instances.

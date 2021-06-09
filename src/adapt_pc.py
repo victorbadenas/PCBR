@@ -1,5 +1,6 @@
 # System/standard imports
 import logging
+import numpy as np
 
 # Our imports
 
@@ -22,13 +23,19 @@ class AdaptPC:
         """
         self.pcbr = pcbr
 
-    def adapt(self, nearest_neighbors, user_request):
+    def adapt(self, nearest_neighbors, distances, mappers, scalers):
         """start with case from case base and then apply domain knowledge to adapt it to user's needs
         """
-        adapted_solution = nearest_neighbors[0, 0].copy()
+
+        # Weighted average given distances to nearest neighbors so as to create new PC.
+        sims = [1/(distance + 0.1) for distance in distances]
+        norm_sims = np.array([sim/np.sum(sims) for sim in sims])[0]
+
+        adapted_solution = [np.sum([norm_sims[neighbor_idx]*nearest_neighbors[neighbor_idx][target_col]
+                                    for neighbor_idx in range(nearest_neighbors.shape[0])])
+                            for target_col in range(nearest_neighbors.shape[1])]
 
         # Use domain knowledge to adapt it
-
         # Kevin: Constraints will be solved after the adaptation stage. It takes into account possible compatibility
         #        issues. The solution is already optimized based on the weighted kNN.
         """
@@ -48,7 +55,22 @@ class AdaptPC:
         """
 
         # May need to convert from benchmark to CPU/GPU here? Adapted solution probably needs a bit more
-        # than just the numeric data
+        # than just the numeric data.
+        # Kevin: Done!!
+
+        # Mapping to closest real component.
+        target_columns = ['CPU Name', 'Capacity', 'Capacity', 'Capacity', 'GPU Name', 'Boolean State']
+        for idx in range(len(adapted_solution) - 1):
+            adapted_solution[idx] = mappers[idx].transform(np.array(adapted_solution[idx]),
+                                                           from_col=mappers[idx].scaler_columns[0],
+                                                           to_col=target_columns[idx])
+
+        # Transformation of Log2 components.
+        for idx in range(1, 4):
+            adapted_solution[idx] = np.power(2, scalers[idx-1].inverse_transform([[adapted_solution[idx]]])[0][0])
+
+        # TODO: Transform price using sum of price components instead of inverse_transform of weighted average.
+        adapted_solution[-1] = scalers[-1].inverse_transform([[adapted_solution[-1]]])[0][0]
 
         return adapted_solution
 

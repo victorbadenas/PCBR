@@ -103,24 +103,26 @@ class PCBR:
         self.source_attributes = case_library[case_library.columns[7:]]
 
         # read component's tables
-        self.cpu_mapper = Mapper.from_csv(path=cpu_path, scaler_columns=['CPU Mark'],
-                                          scaler=self.transformations['CPU'])
-        self.gpu_mapper = Mapper.from_csv(path=gpu_path, scaler_columns=['Benchmark'],
-                                          scaler=self.transformations['GPU'])
-        self.ram_mapper = Mapper.from_csv(path=ram_path, scaler_columns=['Capacity'],
-                                          scaler=self.transformations['RAM (GB)'])
-        self.ssd_mapper = Mapper.from_csv(path=ssd_path, scaler_columns=['Capacity'],
-                                          scaler=self.transformations['SSD (GB)'])
-        self.hdd_mapper = Mapper.from_csv(path=hdd_path, scaler_columns=['Capacity'],
-                                          scaler=self.transformations['HDD (GB)'])
-        self.opt_drive_mapper = Mapper.from_csv(path=opt_drive_path,
-                                                scaler=self.transformations['Optical Drive (1 = DVD, 0 = None)'])
+        cpu_mapper = Mapper.from_csv(path=cpu_path, scaler_columns=['CPU Mark'],
+                                     scaler=self.transformations['CPU'])
+        gpu_mapper = Mapper.from_csv(path=gpu_path, scaler_columns=['Benchmark'],
+                                     scaler=self.transformations['GPU'])
+        ram_mapper = Mapper.from_csv(path=ram_path, scaler_columns=['Capacity'],
+                                     scaler=self.transformations['RAM (GB)'])
+        ssd_mapper = Mapper.from_csv(path=ssd_path, scaler_columns=['Capacity'],
+                                     scaler=self.transformations['SSD (GB)'])
+        hdd_mapper = Mapper.from_csv(path=hdd_path, scaler_columns=['Capacity'],
+                                     scaler=self.transformations['HDD (GB)'])
+        opt_drive_mapper = Mapper.from_csv(path=opt_drive_path, scaler_columns=['Boolean State'],
+                                           scaler=self.transformations['Optical Drive (1 = DVD, 0 = None)'])
+
+        self.mappers = [cpu_mapper, ram_mapper, ssd_mapper, hdd_mapper, gpu_mapper, opt_drive_mapper]
 
         # initialize the adapt_pc object
         self.adapt_pc = AdaptPC(self)
         pcbr_logger.info('Initialization complete!')
 
-    def get_user_request(self):
+    def get_user_request(self) -> UserRequest:
         # Request input here and return it.
         # For now, appears "None" is handled well by retrieve step and it defaults to a case in the library
         # Either need to pre-process the request here or in the retrieve step.
@@ -137,10 +139,14 @@ class PCBR:
                                                                 self.target_attributes.to_numpy())
         return clf.predict(new_instance)
 
-    def reuse(self, nearest_cases=None, user_request=None):
+    def reuse(self, nearest_cases=None, distances=None):
         assert (nearest_cases is not None)
         pcbr_logger.debug('starting with: ' + str(nearest_cases))
-        adapted_case = self.adapt_pc.adapt(nearest_cases, user_request)
+        adapted_case = self.adapt_pc.adapt(nearest_cases, distances, self.mappers,
+                                           [self.transformations['RAM (GB)']['scaler'],
+                                            self.transformations['SSD (GB)']['scaler'],
+                                            self.transformations['HDD (GB)']['scaler'],
+                                            self.transformations['Price (€)']['scaler']])
         pcbr_logger.debug('adapted to: ' + str(adapted_case))
         return adapted_case
 
@@ -152,11 +158,11 @@ if __name__ == '__main__':
 
     user_request = pcbr.get_user_request()
 
-    nearest_cases = pcbr.retrieve(new_instance=user_request.profile, n_neighbors=3)
+    nearest_cases, distances = pcbr.retrieve(new_instance=user_request.profile, n_neighbors=3)
     pcbr_logger.debug(nearest_cases)
     pcbr_logger.debug(nearest_cases.shape)
 
-    proposed_solution = pcbr.reuse(nearest_cases, user_request)
+    proposed_solution = pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances)
 
     # Uncomment as these functions get implemented
     # revision_result = pcbr.revise(proposed_solution)
