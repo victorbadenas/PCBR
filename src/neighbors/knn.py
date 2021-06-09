@@ -66,11 +66,11 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
         """computes the weight for each one of the features.
         currenly not supported and it defaults to uniform.
         """
-        if self.weights == UNIFORM:
-            self.w = np.ones((self.trainX.shape[1],))
-        elif isinstance(self.weights, np.ndarray):
+        if isinstance(self.weights, np.ndarray):
             assert self.weights.shape[0] == self.trainX.shape[1], f"feature mismatch {self.weights.shape[0]} != {self.trainX.shape[1]}"
             self.w = self.weights
+        elif self.weights == UNIFORM:
+            self.w = np.ones((self.trainX.shape[1],))
         self.w = self.w / self.w.sum()
 
     def fit(self, X, y):
@@ -170,7 +170,8 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
 
     def _validateParameters(self):
         assert self.k > 0, f"n_neighbors must be positive, not \'{self.k}\'"
-        assert self.weights in WEIGHTS or isinstance(self.weights, np.ndarray), f"weights \'{self.weights}\' type not supported"
+        if not isinstance(self.weights, np.ndarray):
+            assert self.weights in WEIGHTS, f"weights \'{self.weights}\' type not supported"
         assert self.metric in DISTANCE_METRICS, f"distance metric \'{self.metric}\' type not supported"
         assert self.method in DISTANCE_METHODS, f"distance computation method \'{self.method}\' not supported"
 
