@@ -1,12 +1,12 @@
 import os, sys
-sys.path.append(os.path.dirname(__file__))
-
 import logging
-
 import numpy as np
+
+sys.path.append(os.path.dirname(__file__))
 
 from data.preprocessor import read_initial_cbl, read_table
 from data.mapper import Mapper
+from utils.io import read_file
 from neighbors.knn import KNeighborsClassifier
 from adapt_pc import AdaptPC
 from constraints import Constraints
@@ -31,12 +31,12 @@ def setup_logging():
     retain_logger.setLevel(logging.INFO)
 
 class UserRequest:
-    def __init__(self, profile_str, pref_str, constraints_str ):
-        self.profile=self._process_profile(profile_str)
-        self.preferences=self._process_preferences(pref_str)
-        self.constraints=self._process_constraints(constraints_str)
+    def __init__(self, profile_str, pref_str, constraints_str, scalers):
+        self.profile=self._process_profile(profile_str, scalers)
+        self.preferences=self._process_preferences(pref_str, scalers)
+        self.constraints=self._process_constraints(constraints_str, scalers)
 
-    def _process_profile(self, profile_str):
+    def _process_profile(self, profile_str:str, scalers:dict=None) -> np.ndarray:
         # Input format: Experience, WFH, Primary Use, Budget, Replace, Office, Photoshop, VideoChat, ML, Compilers, HighPerformanceGames, LowPerformanceGames
         # Input example (exactly matches case 2): '2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0'
         # Output format: numpy array suitable to look up nearest case in case library (Note: you will need to
@@ -48,29 +48,31 @@ class UserRequest:
         # Also TODO: Convert all the function header comments to nice docstrings or delete.
         return None
 
-    def _process_preferences(self, pref_str):
+    def _process_preferences(self, pref_str:str, scalers:dict=None) -> np.ndarray:
         # Input format: Preferences matrix survey answers (string). Importance on scale of 1-5, where 1 is least
         #               and 5 is most. Categories are: budget, performance, multi-tasking, gaming,
         #               streaming videos, editing videos/photos/music, fast startup/shutdown, video chat
         # Input example: '5, 2, 3, 1, 2, 1, 3, 4'
         # Output format: numpy array of answers
         # Example output: [5 2 3 1 2 1 3 4]
-
+        preferences_arr = list(map(int, pref_str.split(',')))
         # TODO: Do we want this normalized? Probably
         # TODO: Or would we rather convert it to a weight matrix to use directly on the output features?
         #       We're not using this yet, so Kevin/Victor, please chime in with your opinions about how
         #       you think we should format and apply this field. For now, I will just return 1's everywhere.
-        return np.array([1,1,1,1,1,1,1,1])
+        return np.array(preferences_arr)
 
-    def _process_constraints(self, constraints_str):
+    def _process_constraints(self, constraints_str:str, scalers:dict=None) -> Constraints:
         # Input format: string with multiple comma-separated key: value pairs of constraints. 
         # Input example: 'cpu_brand: Intel, gpu_brand: PreferNVIDIA, max_budget: 1000'
         # Output format: Constraints object
 
         # TODO: Convert string to constraints dict (or change Constraints object to process the string directly)
-        constraints=Constraints({'cpu_brand' : 'Intel', 'gpu_brand' : 'PreferNVIDIA', 'max_budget' : '1000'})
-
-        return constraints
+        constraints_dict = dict()
+        for constraint in constraints_str.split(","):
+            k, v = constraint.split(':')
+            constraints_dict[k.strip()] = v.strip()
+        return Constraints(constraints_dict)
 
 
 class PCBR:
@@ -110,14 +112,42 @@ class PCBR:
         self.adapt_pc = AdaptPC(self)
         pcbr_logger.info('Initialization complete!')
 
-    def get_user_request(self):
+    def get_user_request(self, mock_file=None, mode='one_pass'):
         # Request input here and return it.
         # For now, appears "None" is handled well by retrieve step and it defaults to a case in the library
         # Either need to pre-process the request here or in the retrieve step.
         # Also need to pass along some extra metadata, such as constraints.
-        constraints=Constraints()
-        user_req_rv=UserRequest(None,None,None)
-        return user_req_rv
+        if mock_file is not None:
+
+            # initialize the data and the iteration index pointing to the 
+            # instance to be returned in this call
+            if not hasattr(self, 'mock_user_requests'):
+                self.mock_user_requests = read_file(mock_file, sep='\t')
+                self.mock_requests_idx = 0
+
+            # end of loop control.
+            if self.mock_requests_idx > len(self.mock_user_requests):
+                if mode == 'one_pass':
+                    # if we reached the end of the mock list, 
+                    # return None as no more instances are available.
+                    return None
+                elif mode == 'cyclic':
+                    # if we reach the end of the mock list and we are in cyclic,
+                    # reset the index and start again
+                    self.mock_requests_idx = self.mock_requests_idx % len(self.mock_user_requests)
+
+            # load current iteration mock request
+            request_strings = self.mock_user_requests[self.mock_requests_idx]
+            
+            # increment pointer
+            self.mock_requests_idx += 1
+
+            # return request built with mock request trings
+            return UserRequest(*request_strings, self.transformations)
+        else:
+            # TODO: CLI request
+            user_req_rv = UserRequest(None,None,None)
+            return user_req_rv
 
     def retrieve(self, newInstance=None, n_neighbors=2):
         if newInstance is None:
@@ -138,13 +168,13 @@ if __name__ == '__main__':
 
     pcbr = PCBR()
 
-    user_request = pcbr.get_user_request()
+    user_request = pcbr.get_user_request(mock_file='../data/mock_requests.tsv')
 
     nearest_cases = pcbr.retrieve(newInstance=user_request.profile, n_neighbors=3)
     pcbr_logger.debug(nearest_cases)
     pcbr_logger.debug(nearest_cases.shape)
 
-    proposedSolution = pcbr.reuse(nearest_cases,user_request)
+    proposed_solution = pcbr.reuse(nearest_cases, user_request)
 
     # Uncomment as these functions get implemented
     #revisionResult=pcbr.revise(proposedSolution)
