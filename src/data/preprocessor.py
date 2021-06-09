@@ -56,5 +56,4 @@ def read_initial_cbl(path='data/pc_specs.csv',
         df[feature] = transformations[feature]['scaler'].transform(
             df[feature].to_numpy().reshape(-1, 1)
         )
-
     return df, transformations

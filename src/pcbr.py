@@ -1,5 +1,4 @@
-import os, sys
-import logging
+import os, sys, logging
 import numpy as np
 
 sys.path.append(os.path.dirname(__file__))
@@ -12,11 +11,12 @@ from adapt_pc import AdaptPC
 from constraints import Constraints
 
 # Logger objects
-pcbr_logger=logging.getLogger('pcbr')
-retrieve_logger=logging.getLogger('retrieve')
-reuse_logger=logging.getLogger('reuse')
-revise_logger=logging.getLogger('revise')
-retain_logger=logging.getLogger('retain')
+pcbr_logger = logging.getLogger('pcbr')
+retrieve_logger = logging.getLogger('retrieve')
+reuse_logger = logging.getLogger('reuse')
+revise_logger = logging.getLogger('revise')
+retain_logger = logging.getLogger('retain')
+
 
 def setup_logging():
     # Set up logging subsystem. Level should be one of: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET
@@ -29,6 +29,7 @@ def setup_logging():
     reuse_logger.setLevel(logging.DEBUG)
     revise_logger.setLevel(logging.INFO)
     retain_logger.setLevel(logging.INFO)
+
 
 class UserRequest:
     profile_format = ["Experience", "WFH", "Primary use", "Budget", 
@@ -79,12 +80,17 @@ class UserRequest:
         # TODO: Or would we rather convert it to a weight matrix to use directly on the output features?
         #       We're not using this yet, so Kevin/Victor, please chime in with your opinions about how
         #       you think we should format and apply this field. For now, I will just return 1's everywhere.
+        # Kevin: I think that the weight matrix that will be applied in kNN should depend directly on these preferences.
+        #        (e.g. If the budget importance is high, then set w(price_feature) high)
         return (np.array(preferences_arr).astype(np.float) - 1) / 4
+
 
     def _process_constraints(self, constraints_str:str, scalers:dict=None) -> Constraints:
         # Input format: string with multiple comma-separated key: value pairs of constraints. 
         # Input example: 'cpu_brand: Intel, gpu_brand: PreferNVIDIA, max_budget: 1000'
         # Output format: Constraints object
+        # Kevin: This part will be processed after the weighted kNN so as to try to solve the different constraints
+        #        by giving different options to the user via UI.
         constraints_dict = dict()
         for constraint in constraints_str.split(","):
             k, v = constraint.split(':')
@@ -120,18 +126,27 @@ class PCBR:
         self.source_attributes = case_library[case_library.columns[7:]]
 
         # read component's tables
-        self.cpu_mapper = Mapper.from_csv(path=cpu_path, scaler_columns=['CPU Mark'], scaler=self.transformations['CPU'])
-        self.gpu_mapper = Mapper.from_csv(path=gpu_path, scaler_columns=['Benchmark'], scaler=self.transformations['GPU'])
-        self.ram_mapper = Mapper.from_csv(path=ram_path, scaler_columns=['Capacity'], scaler=self.transformations['RAM (GB)'])
-        self.ssd_mapper = Mapper.from_csv(path=ssd_path, scaler_columns=['Capacity'], scaler=self.transformations['SSD (GB)'])
-        self.hdd_mapper = Mapper.from_csv(path=hdd_path, scaler_columns=['Capacity'], scaler=self.transformations['HDD (GB)'])
-        self.opt_drive_mapper = Mapper.from_csv(path=opt_drive_path, scaler=self.transformations['Optical Drive (1 = DVD; 0 = None)'])
+        cpu_mapper = Mapper.from_csv(path=cpu_path, scaler_columns=['CPU Mark'],
+                                     scaler=self.transformations['CPU'])
+        gpu_mapper = Mapper.from_csv(path=gpu_path, scaler_columns=['Benchmark'],
+                                     scaler=self.transformations['GPU'])
+        ram_mapper = Mapper.from_csv(path=ram_path, scaler_columns=['Capacity'],
+                                     scaler=self.transformations['RAM (GB)'])
+        ssd_mapper = Mapper.from_csv(path=ssd_path, scaler_columns=['Capacity'],
+                                     scaler=self.transformations['SSD (GB)'])
+        hdd_mapper = Mapper.from_csv(path=hdd_path, scaler_columns=['Capacity'],
+                                     scaler=self.transformations['HDD (GB)'])
+        opt_drive_mapper = Mapper.from_csv(path=opt_drive_path, scaler_columns=['Boolean State'],
+                                           scaler=self.transformations['Optical Drive (1 = DVD; 0 = None)'])
+        # sorted in the order of the case_library
+        self.mappers = [cpu_mapper, ram_mapper, ssd_mapper, hdd_mapper, gpu_mapper, opt_drive_mapper]
 
         # initialize the adapt_pc object
         self.adapt_pc = AdaptPC(self)
         pcbr_logger.info('Initialization complete!')
 
-    def get_user_request(self, mock_file=None, mode='one_pass'):
+    def get_user_request(self, mock_file=None, mode='one_pass') -> UserRequest:
+
         # Request input here and return it.
         # For now, appears "None" is handled well by retrieve step and it defaults to a case in the library
         # Either need to pre-process the request here or in the retrieve step.
@@ -168,19 +183,25 @@ class PCBR:
             user_req_rv = UserRequest(None,None,None)
             return user_req_rv
 
-    def retrieve(self, newInstance=None, n_neighbors=2):
-        if newInstance is None:
-            newInstance = self.source_attributes.iloc[2].to_numpy().reshape(1, -1)
-        pcbr_logger.debug('looking for: ' + str(newInstance))
-        clf = KNeighborsClassifier(n_neighbors=n_neighbors).fit(self.source_attributes.to_numpy(), self.target_attributes.to_numpy())
-        return clf.predict(newInstance)
+    def retrieve(self, new_instance=None, n_neighbors=2):
+        if new_instance is None:
+            new_instance = self.source_attributes.iloc[2].to_numpy().reshape(1, -1)
+        pcbr_logger.debug('looking for: ' + str(new_instance))
+        clf = KNeighborsClassifier(n_neighbors=n_neighbors).fit(self.source_attributes.to_numpy(),
+                                                                self.target_attributes.to_numpy())
+        return clf.predict(new_instance)
 
-    def reuse(self, nearest_cases=None, user_request=None):
-        assert(nearest_cases is not None)
+    def reuse(self, nearest_cases=None, distances=None):
+        assert (nearest_cases is not None)
         pcbr_logger.debug('starting with: ' + str(nearest_cases))
-        adaptedCase = self.adapt_pc.adapt(nearest_cases,user_request)
-        pcbr_logger.debug('adapted to: ' + str(adaptedCase))
-        return adaptedCase
+        adapted_case = self.adapt_pc.adapt(nearest_cases, distances, self.mappers,
+                                           [self.transformations['RAM (GB)']['scaler'],
+                                            self.transformations['SSD (GB)']['scaler'],
+                                            self.transformations['HDD (GB)']['scaler'],
+                                            self.transformations['Price (€)']['scaler']])
+        pcbr_logger.debug('adapted to: ' + str(adapted_case))
+        return adapted_case
+
 
 if __name__ == '__main__':
     setup_logging()
@@ -189,14 +210,15 @@ if __name__ == '__main__':
 
     user_request = pcbr.get_user_request(mock_file='../data/mock_requests.tsv')
 
-    nearest_cases = pcbr.retrieve(newInstance=user_request.profile, n_neighbors=3)
+    nearest_cases, distances = pcbr.retrieve(new_instance=user_request.profile, n_neighbors=3)
     pcbr_logger.debug(nearest_cases)
     pcbr_logger.debug(nearest_cases.shape)
 
-    proposed_solution = pcbr.reuse(nearest_cases, user_request)
+    proposed_solution = pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances)
 
     # Uncomment as these functions get implemented
-    #revisionResult=pcbr.revise(proposedSolution)
-    #pcbr.retain(proposedSolution, revisionResult)
+    # revision_result = pcbr.revise(proposed_solution)
+    # pcbr.retain(proposed_solution, revision_result)
 
     # TODO: Should we write new case base to file and exit or just keep looping?
+    # Kevin: I think that we talked yesterday about just keeping the loop.

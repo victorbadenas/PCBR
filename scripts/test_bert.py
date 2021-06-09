@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 from bert_serving.client import BertClient
 
+"""
+@Deprecated: Initially, BERT is not going to be used.
+"""
 if __name__ == '__main__':
     dataset = pd.read_csv('data/pc_specs.csv', index_col=0)
     list_to_encode = dataset["CPU"]
