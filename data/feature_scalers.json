@@ -1,0 +1,124 @@
+{
+    "Experience": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 1,
+        "max": 5
+    },
+    "WFH": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 0,
+        "max": 1
+    },
+    "Budget": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 1,
+        "max": 3
+    },
+    "Replace (1-most frequent; 4-least frequent)": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 1,
+        "max": 4
+    },
+    "Office": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 0,
+        "max": 1
+    },
+    "Photoshop": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 0,
+        "max": 1
+    },
+    "VideoChat": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 0,
+        "max": 1
+    },
+    "ML": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 0,
+        "max": 1
+    },
+    "Compilers": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 0,
+        "max": 1
+    },
+    "HighPerformanceGames": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 0,
+        "max": 1
+    },
+    "LowPerformanceGames": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 0,
+        "max": 1
+    },
+    "Primary use": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 0,
+        "max": 5,
+        "map" : {
+            "Home": 0,
+            "Work": 1,
+            "Production": 2,
+            "Programming": 3,
+            "ML": 4,
+            "Gaming": 5
+        }
+    },
+    "CPU": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 8844,
+        "max": 46142
+    },
+    "RAM (GB)": {
+        "type": "MinMaxScaler",
+        "log2": true,
+        "min": 8,
+        "max": 128
+    },
+    "SSD (GB)": {
+        "type": "MinMaxScaler",
+        "log2": true,
+        "min": 0,
+        "max": 4000
+    },
+    "HDD (GB)": {
+        "type": "MinMaxScaler",
+        "log2": true,
+        "min": 0,
+        "max": 4000
+    },
+    "GPU": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 1676,
+        "max": 26119
+    },
+    "Optical Drive (1 = DVD; 0 = None)": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 0,
+        "max": 1
+    },
+    "Price (€)": {
+        "type": "MinMaxScaler",
+        "log2": false,
+        "min": 0,
+        "max": 10000
+    }
+}
