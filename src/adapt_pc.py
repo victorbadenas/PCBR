@@ -59,11 +59,19 @@ class AdaptPC:
         # Kevin: Done!!
 
         # Mapping to closest real component.
+        source_columns = ['CPU Mark', 'Capacity', 'Capacity', 'Capacity', 'Benchmark', 'Boolean State']
         target_columns = ['CPU Name', 'Capacity', 'Capacity', 'Capacity', 'GPU Name', 'Boolean State']
+        price_columns = ['MSRP', 'Price', 'Price', 'Price', 'MSRP', 'Price']
+        solution_price = 0
         for idx in range(len(adapted_solution) - 1):
             adapted_solution[idx] = mappers[idx].transform(np.array(adapted_solution[idx]),
-                                                           from_col=mappers[idx].scaler_columns[0],
-                                                           to_col=target_columns[idx])
+                                                        from_col=mappers[idx].scaler_columns[0],
+                                                        to_col=target_columns[idx])[0]
+            solution_price += mappers[idx].transform(np.array(adapted_solution[idx]),
+                                                     from_col=target_columns[idx],
+                                                     to_col=price_columns[idx],
+            )[0]
+        adapted_solution[-1] = np.round(solution_price, 2)
 
         # Transformation of Log2 components.
         for idx in range(1, 4):
@@ -75,7 +83,7 @@ class AdaptPC:
                 ) - 1
             )
         # TODO: Transform price using sum of price components instead of inverse_transform of weighted average.
-        adapted_solution[-1] = scalers[-1].inverse_transform([[adapted_solution[-1]]])[0][0]
+        # adapted_solution[-1] = scalers[-1].inverse_transform([[adapted_solution[-1]]])[0][0]
 
         return adapted_solution
 

@@ -55,6 +55,8 @@ class Mapper:
     def transform(self, X, from_col, to_col):
         if isinstance(X, (pd.DataFrame, pd.Series)):
             X = X.to_numpy()
+        elif isinstance(X, (float, int)):
+            X = np.array(X)
         if not isinstance(X, np.ndarray):
             raise ValueError('X must be a np.array')
         if from_col not in self.data.columns or to_col not in self.data.columns:
@@ -62,13 +64,19 @@ class Mapper:
 
         source_data = self.data[from_col].to_numpy()
         target_data = self.data[to_col].to_numpy()
+
+        if len(X.shape) <= 1:
+            X = X.reshape(-1, 1)
+        if len(source_data.shape) == 1:
+            source_data = source_data.reshape(1, -1)
+
         if is_numeric(source_data):
-            nn_index = np.argmin(np.abs(np.subtract(source_data, X)))
+            nn_index = np.argmin(np.abs(np.subtract(source_data, X)), axis=1)
             return target_data[nn_index]
         else:
-            map_dict = dict(zip(source_data, target_data))
+            map_dict = dict(zip(source_data[0], target_data))
             vfunc = np.vectorize(lambda x: map_dict[x])
-            return vfunc(X)
+            return vfunc(X[:, 0])
 
     def _scale_data(self):
         for column in self.scaler_columns:
