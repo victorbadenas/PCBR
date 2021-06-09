@@ -37,10 +37,10 @@ class UserRequest:
         "Office", "Photoshop", "VideoChat", "ML", "Compilers", 
         "HighPerformanceGames", "LowPerformanceGames"]
 
-    def __init__(self, profile_str, pref_str, constraints_str, scalers):
-        self.profile=self._process_profile(profile_str, scalers)
-        self.preferences=self._process_preferences(pref_str, scalers)
-        self.constraints=self._process_constraints(constraints_str, scalers)
+    def __init__(self, profile_str, pref_str, constraints_str, scalers, feature_relevance_matrix):
+        self.profile = self._process_profile(profile_str, scalers)
+        self.preferences = self._process_preferences(pref_str, feature_relevance_matrix, scalers)
+        self.constraints = self._process_constraints(constraints_str, scalers)
 
     def _process_profile(self, profile_str:str, scalers:dict=None) -> np.ndarray:
         # Input format: Experience, WFH, Primary Use, Budget, Replace, Office, Photoshop, VideoChat, ML, Compilers, HighPerformanceGames, LowPerformanceGames
@@ -69,20 +69,18 @@ class UserRequest:
             profile[i] = mapper['scaler'].transform([[value]])[0,0]
         return np.array(profile).reshape(1, -1)
 
-    def _process_preferences(self, pref_str:str, scalers:dict=None) -> np.ndarray:
+    def _process_preferences(self, pref_str:str, feature_relevance_matrix:np.ndarray, scalers:dict=None) -> np.ndarray:
         # Input format: Preferences matrix survey answers (string). Importance on scale of 1-5, where 1 is least
         #               and 5 is most. Categories are: budget, performance, multi-tasking, gaming,
         #               streaming videos, editing videos/photos/music, fast startup/shutdown, video chat
-        # Input example: '5, 2, 3, 1, 2, 1, 3, 4'
+        # Input example: '5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0'
         # Output format: numpy array of answers
-        # Example output: [5 2 3 1 2 1 3 4]
+        # Example output: [5 2 3 1 2 1 3 4 1 0 1 0 0]
         preferences_arr = list(map(int, pref_str.split(',')))
-        # TODO: Or would we rather convert it to a weight matrix to use directly on the output features?
-        #       We're not using this yet, so Kevin/Victor, please chime in with your opinions about how
-        #       you think we should format and apply this field. For now, I will just return 1's everywhere.
-        # Kevin: I think that the weight matrix that will be applied in kNN should depend directly on these preferences.
-        #        (e.g. If the budget importance is high, then set w(price_feature) high)
-        return (np.array(preferences_arr).astype(np.float) - 1) / 4
+        preferences_scaled = (np.array(preferences_arr).astype(np.float) - 1) / 4
+        feature_relevance = preferences_scaled@feature_relevance_matrix
+        feature_relevance_scaled = feature_relevance / 2 + .5
+        return feature_relevance_scaled
 
 
     def _process_constraints(self, constraints_str:str, scalers:dict=None) -> Constraints:
@@ -106,7 +104,8 @@ class PCBR:
                        ssd_path='../data/ssd_table.csv',
                        hdd_path='../data/hdd_table.csv',
                        opt_drive_path='../data/optical_drive_table.csv',
-                       feature_scalers_meta='../data/feature_scalers.json'):
+                       feature_scalers_meta='../data/feature_scalers.json',
+                       feature_relevance_path='../data/feature_relevance.csv'):
 
         pcbr_logger.info('Initializing...')
         # read mappers
@@ -140,6 +139,9 @@ class PCBR:
                                            scaler=self.transformations['Optical Drive (1 = DVD; 0 = None)'])
         # sorted in the order of the case_library
         self.mappers = [cpu_mapper, ram_mapper, ssd_mapper, hdd_mapper, gpu_mapper, opt_drive_mapper]
+
+        # feature relevance matrix for UserRequests
+        self.feature_relevance_matrix = np.loadtxt(feature_relevance_path, delimiter=',', ndmin=2)
 
         # initialize the adapt_pc object
         self.adapt_pc = AdaptPC(self)
@@ -177,18 +179,22 @@ class PCBR:
             self.mock_requests_idx += 1
 
             # return request built with mock request trings
-            return UserRequest(*request_strings, self.transformations)
+            return UserRequest(*request_strings, self.transformations,self.feature_relevance_matrix)
         else:
             # TODO: CLI request
-            user_req_rv = UserRequest(None,None,None)
+            user_req_rv = UserRequest(None,None,None,self.transformations, self.feature_relevance_matrix)
             return user_req_rv
 
-    def retrieve(self, new_instance=None, n_neighbors=2):
+    def retrieve(self, new_instance=None, feature_weights=None, n_neighbors=2):
         if new_instance is None:
             new_instance = self.source_attributes.iloc[2].to_numpy().reshape(1, -1)
+        if feature_weights is None:
+            feature_weights = 'uniform'
         pcbr_logger.debug('looking for: ' + str(new_instance))
-        clf = KNeighborsClassifier(n_neighbors=n_neighbors).fit(self.source_attributes.to_numpy(),
-                                                                self.target_attributes.to_numpy())
+        clf = KNeighborsClassifier(n_neighbors=n_neighbors, weights=feature_weights).fit(
+            self.source_attributes.to_numpy(),
+            self.target_attributes.to_numpy()
+        )
         return clf.predict(new_instance)
 
     def reuse(self, nearest_cases=None, distances=None):
@@ -210,7 +216,7 @@ if __name__ == '__main__':
 
     user_request = pcbr.get_user_request(mock_file='../data/mock_requests.tsv')
 
-    nearest_cases, distances = pcbr.retrieve(new_instance=user_request.profile, n_neighbors=3)
+    nearest_cases, distances = pcbr.retrieve(new_instance=user_request.profile, feature_weights=user_request.preferences, n_neighbors=3)
     pcbr_logger.debug(nearest_cases)
     pcbr_logger.debug(nearest_cases.shape)
 
