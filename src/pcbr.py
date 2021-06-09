@@ -31,6 +31,11 @@ def setup_logging():
     retain_logger.setLevel(logging.INFO)
 
 class UserRequest:
+    profile_format = ["Experience", "WFH", "Primary use", "Budget", 
+        "Replace (1-most frequent; 4-least frequent)", 
+        "Office", "Photoshop", "VideoChat", "ML", "Compilers", 
+        "HighPerformanceGames", "LowPerformanceGames"]
+
     def __init__(self, profile_str, pref_str, constraints_str, scalers):
         self.profile=self._process_profile(profile_str, scalers)
         self.preferences=self._process_preferences(pref_str, scalers)
@@ -43,10 +48,25 @@ class UserRequest:
         #                apply pre-processing to obtain the correct output format)
         # Example output: [[0.25       1.         0.6        0.         0.66666667 1.
         #                   0.         0.         0.         1.         0.         0.        ]]
+        profile = profile_str.split(',')
+        if scalers is None:
+            return np.array(list(map(float, profile)))
 
-        # TODO: Fill in this function. For now, None ok to return.
-        # Also TODO: Convert all the function header comments to nice docstrings or delete.
-        return None
+        for i, (column, value) in enumerate(zip(self.profile_format, profile)):
+            column, value = column.strip(), value.strip()
+            mapper = scalers[column]
+            if 'map' in mapper:
+                # categorical require a mapping
+                value = mapper['map'][value]
+            else:
+                # else convert to float
+                value = float(value)
+
+            if mapper['log2']:
+                value = np.log2(value+1)
+
+            profile[i] = mapper['scaler'].transform(np.array(value).reshape(1,1))[0,0]
+        return np.array(profile)
 
     def _process_preferences(self, pref_str:str, scalers:dict=None) -> np.ndarray:
         # Input format: Preferences matrix survey answers (string). Importance on scale of 1-5, where 1 is least
@@ -56,18 +76,15 @@ class UserRequest:
         # Output format: numpy array of answers
         # Example output: [5 2 3 1 2 1 3 4]
         preferences_arr = list(map(int, pref_str.split(',')))
-        # TODO: Do we want this normalized? Probably
         # TODO: Or would we rather convert it to a weight matrix to use directly on the output features?
         #       We're not using this yet, so Kevin/Victor, please chime in with your opinions about how
         #       you think we should format and apply this field. For now, I will just return 1's everywhere.
-        return np.array(preferences_arr)
+        return (np.array(preferences_arr).astype(np.float) - 1) / 4
 
     def _process_constraints(self, constraints_str:str, scalers:dict=None) -> Constraints:
         # Input format: string with multiple comma-separated key: value pairs of constraints. 
         # Input example: 'cpu_brand: Intel, gpu_brand: PreferNVIDIA, max_budget: 1000'
         # Output format: Constraints object
-
-        # TODO: Convert string to constraints dict (or change Constraints object to process the string directly)
         constraints_dict = dict()
         for constraint in constraints_str.split(","):
             k, v = constraint.split(':')
@@ -82,7 +99,8 @@ class PCBR:
                        ram_path='../data/ram_table.csv',
                        ssd_path='../data/ssd_table.csv',
                        hdd_path='../data/hdd_table.csv',
-                       opt_drive_path='../data/optical_drive_table.csv'):
+                       opt_drive_path='../data/optical_drive_table.csv',
+                       feature_scalers_meta='../data/feature_scalers.json'):
 
         pcbr_logger.info('Initializing...')
         # read mappers
@@ -93,7 +111,8 @@ class PCBR:
             ram_path=ram_path,
             ssd_path=ssd_path,
             hdd_path=hdd_path,
-            opt_drive_path=opt_drive_path
+            opt_drive_path=opt_drive_path,
+            feature_scalers_meta=feature_scalers_meta
         )
 
         # Split into "source" (preferences) and "target" (PC specs)
@@ -106,7 +125,7 @@ class PCBR:
         self.ram_mapper = Mapper.from_csv(path=ram_path, scaler_columns=['Capacity'], scaler=self.transformations['RAM (GB)'])
         self.ssd_mapper = Mapper.from_csv(path=ssd_path, scaler_columns=['Capacity'], scaler=self.transformations['SSD (GB)'])
         self.hdd_mapper = Mapper.from_csv(path=hdd_path, scaler_columns=['Capacity'], scaler=self.transformations['HDD (GB)'])
-        self.opt_drive_mapper = Mapper.from_csv(path=opt_drive_path, scaler=self.transformations['Optical Drive (1 = DVD, 0 = None)'])
+        self.opt_drive_mapper = Mapper.from_csv(path=opt_drive_path, scaler=self.transformations['Optical Drive (1 = DVD; 0 = None)'])
 
         # initialize the adapt_pc object
         self.adapt_pc = AdaptPC(self)
