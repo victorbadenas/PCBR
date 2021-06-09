@@ -3,14 +3,48 @@ import logging
 import numpy as np
 
 # Our imports
+from user_request import UserRequest
 
 # Constants
 
 # Module-global data
 reuse_logger = logging.getLogger('reuse')
 
+source_columns = ['CPU Mark', 'Capacity', 'Capacity', 'Capacity', 'Benchmark', 'Boolean State']
+target_columns = ['CPU Name', 'Capacity', 'Capacity', 'Capacity', 'GPU Name', 'Boolean State']
+price_columns = ['MSRP', 'Price', 'Price', 'Price', 'MSRP', 'Price']
+
 
 # Function definitions
+def map_to_closest(adapted_solution, mappers, scalers):
+        # Mapping to closest real component.
+        # Putting into a function since it's a human-readable way to monitor
+        # transformations as they are applied.
+
+        # Copy data so we don't destroy it
+        tmp_adapted_solution = adapted_solution.copy()
+
+        solution_price = 0
+        for idx in range(len(tmp_adapted_solution) - 1):
+            tmp_adapted_solution[idx] = mappers[idx].transform(np.array(tmp_adapted_solution[idx]),
+                                                        from_col=mappers[idx].scaler_columns[0],
+                                                        to_col=target_columns[idx])[0]
+            solution_price += mappers[idx].transform(np.array(tmp_adapted_solution[idx]),
+                                                     from_col=target_columns[idx],
+                                                     to_col=price_columns[idx],
+            )[0]
+        tmp_adapted_solution[-1] = np.round(solution_price, 2)
+
+        # Transformation of Log2 components.
+        for idx in range(1, 4):
+            tmp_adapted_solution[idx] = np.round(
+                np.power(
+                    2,
+                    scalers[idx-1].inverse_transform(
+                        [[tmp_adapted_solution[idx]]])[0][0]
+                ) - 1
+            )
+        return tmp_adapted_solution
 
 # Class definitions
 class AdaptPC:
@@ -23,7 +57,7 @@ class AdaptPC:
         """
         self.pcbr = pcbr
 
-    def adapt(self, nearest_neighbors, distances, mappers, scalers):
+    def adapt(self, nearest_neighbors, distances, mappers, scalers, user_request):
         """start with case from case base and then apply domain knowledge to adapt it to user's needs
         """
 
@@ -38,6 +72,14 @@ class AdaptPC:
         # Use domain knowledge to adapt it
         # Kevin: Constraints will be solved after the adaptation stage. It takes into account possible compatibility
         #        issues. The solution is already optimized based on the weighted kNN.
+        reuse_logger.debug('Configuration after weighted adaptation: ' + str(map_to_closest(adapted_solution, mappers, scalers)))
+
+        reuse_logger.debug('Checking constraints and optimizing...')
+        reuse_logger.debug(user_request.constraints)
+        reuse_logger.debug('CPU Brand: '  + str(user_request.constraints.cpu_brand))
+        reuse_logger.debug('GPU Brand: '  + str(user_request.constraints.gpu_brand))
+        reuse_logger.debug('Min RAM: '    + str(user_request.constraints.min_ram))
+        reuse_logger.debug('Max budget: ' + str(user_request.constraints.max_budget))
         """
         # TODO: May need to make this a loop and break when "good enough"
         good_enough = False
@@ -54,34 +96,12 @@ class AdaptPC:
             good_enough = True
         """
 
+        reuse_logger.debug('Done checking constraints and optimizing.')
+
         # May need to convert from benchmark to CPU/GPU here? Adapted solution probably needs a bit more
         # than just the numeric data.
         # Kevin: Done!!
-
-        # Mapping to closest real component.
-        source_columns = ['CPU Mark', 'Capacity', 'Capacity', 'Capacity', 'Benchmark', 'Boolean State']
-        target_columns = ['CPU Name', 'Capacity', 'Capacity', 'Capacity', 'GPU Name', 'Boolean State']
-        price_columns = ['MSRP', 'Price', 'Price', 'Price', 'MSRP', 'Price']
-        solution_price = 0
-        for idx in range(len(adapted_solution) - 1):
-            adapted_solution[idx] = mappers[idx].transform(np.array(adapted_solution[idx]),
-                                                        from_col=mappers[idx].scaler_columns[0],
-                                                        to_col=target_columns[idx])[0]
-            solution_price += mappers[idx].transform(np.array(adapted_solution[idx]),
-                                                     from_col=target_columns[idx],
-                                                     to_col=price_columns[idx],
-            )[0]
-        adapted_solution[-1] = np.round(solution_price, 2)
-
-        # Transformation of Log2 components.
-        for idx in range(1, 4):
-            adapted_solution[idx] = np.round(
-                np.power(
-                    2,
-                    scalers[idx-1].inverse_transform(
-                        [[adapted_solution[idx]]])[0][0]
-                ) - 1
-            )
+        adapted_solution=map_to_closest(adapted_solution, mappers, scalers)
 
         return adapted_solution
 
