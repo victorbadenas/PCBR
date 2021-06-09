@@ -82,8 +82,6 @@ class AdaptPC:
                         [[adapted_solution[idx]]])[0][0]
                 ) - 1
             )
-        # TODO: Transform price using sum of price components instead of inverse_transform of weighted average.
-        # adapted_solution[-1] = scalers[-1].inverse_transform([[adapted_solution[-1]]])[0][0]
 
         return adapted_solution
 
