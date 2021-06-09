@@ -19,11 +19,15 @@ price_columns = ['MSRP', 'Price', 'Price', 'Price', 'MSRP', 'Price']
 def map_to_closest(adapted_solution, mappers, scalers):
         # Mapping to closest real component.
         # Putting into a function since it's a human-readable way to monitor
-        # transformations as they are applied.
+        # transformations as they are applied. This function is also important
+        # because it calculates the price of the assembled solution.
 
         # Copy data so we don't destroy it
         tmp_adapted_solution = adapted_solution.copy()
 
+        # TODO: Should we start the price off higher than 0 to account for miscellaneous things
+        #       like motherboard, case, etc., and be a fairer comparison to the cases? I'm
+        #       thinking maybe 150-200€ might be a fair starting point...
         solution_price = 0
         for idx in range(len(tmp_adapted_solution) - 1):
             tmp_adapted_solution[idx] = mappers[idx].transform(np.array(tmp_adapted_solution[idx]),
@@ -98,9 +102,8 @@ class AdaptPC:
 
         reuse_logger.debug('Done checking constraints and optimizing.')
 
-        # May need to convert from benchmark to CPU/GPU here? Adapted solution probably needs a bit more
-        # than just the numeric data.
-        # Kevin: Done!!
+        # Convert from numeric to human-readable, mapping to closest values where there isn't an
+        # exact match
         adapted_solution=map_to_closest(adapted_solution, mappers, scalers)
 
         return adapted_solution
