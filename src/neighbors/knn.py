@@ -12,11 +12,9 @@ __title__ = 'KNeighborsClassifier'
 __version__ = '0.1.0'
 
 import numpy as np
-from scipy.spatial.distance import cdist
-from sklearn.feature_selection import mutual_info_classif
-from sklearn.base import BaseEstimator, ClassifierMixin
-from .utils import ndcorrelate
 from . import metrics
+from scipy.spatial.distance import cdist
+from sklearn.base import BaseEstimator, ClassifierMixin
 
 eps = np.finfo(float).eps
 
@@ -39,10 +37,10 @@ DISTANCE_METHODS = [SCIPY, MAT]
 class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
     __version__ = '0.1.0'
     __doc__ = ""
+
     def __init__(self, n_neighbors=5,
                  *, weights='uniform',
                  metric='minkowski',
-                 voting='majority',
                  method='scipy'):
         """KNeighborsClassifier object
 
@@ -106,7 +104,7 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
 
         Returns:
             [KNeighborsClassifier]: [fitted classifier]
-        """        
+        """
         assert X.shape[0] >= self.k, f"Need a minimum of {self.k} points"
         self.trainX = self._validate_data(X)
         self.trainTargets = y.copy()
@@ -126,7 +124,7 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
         distanceMatrix = self.computeDistanceMatrix(X, self.trainX, self.w, self.metric, self.method)
         knnIndexes = self._computeKNNIndex(distanceMatrix)
         knnLabels = self._extractLabels(knnIndexes)
-        return knnLabels
+        return knnLabels, np.sort(distanceMatrix)[:, :self.k]
 
     def _extractLabels(self, knnIndexes):
         """maps the best indexes to the labels that correspond to those instances.
@@ -136,7 +134,7 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
     def _computeKNNIndex(self, distanceMatrix):
         """extracts the indexes for the best k elements in the training data.
         """
-        return np.argsort(distanceMatrix)[:,:self.k]
+        return np.argsort(distanceMatrix)[:, :self.k]
 
     def computeDistanceMatrix(self, X, trainX, w, metric=MINKOWSKI, method=SCIPY):
         """computes the distance matrix. Switches between matricial or cdist operations.
@@ -173,9 +171,10 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
         assert self.metric in DISTANCE_METRICS, f"distance metric \'{self.metric}\' type not supported"
         assert self.method in DISTANCE_METHODS, f"distance computation method \'{self.method}\' not supported"
 
+
 if __name__ == "__main__":
     N_features = 4
     X = np.random.rand(3, 4)
-    y = np.eye(3) # one hot encoded labels
+    y = np.eye(3)  # one hot encoded labels
     clf = KNeighborsClassifier(1).fit(X, y)
-    pred = clf.predict(X)[:,0,:]
+    pred = clf.predict(X)[:, 0, :]

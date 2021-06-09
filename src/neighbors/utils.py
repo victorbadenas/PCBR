@@ -17,21 +17,25 @@ def timer(print_=False):
             st = time.time()
             ret = func(*args, **kwargs)
             if print_:
-                print(f"{func.__name__} ran in {time.time()-st:.6f}s")
+                print(f"{func.__name__} ran in {time.time() - st:.6f}s")
                 return ret
             else:
                 delta = time.time() - st
                 return ret, delta
+
         return inner
+
     return inner2
 
 
-def separateOutput(msg:str):
+def separateOutput(msg: str):
     def inner2(f):
         def inner(*args, **kwargs):
             print(msg.center(80, '-'))
             return f(*args, **kwargs)
+
         return inner
+
     return inner2
 
 

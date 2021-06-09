@@ -60,30 +60,31 @@ def read_initial_cbl(path='data/pc_specs.csv',
         mmscaler = MinMaxScaler()
         if column == 'CPU':
             # we need to fit with all the possible benchmarks, not only the ones in the case base
-            mmscaler = mmscaler.fit(cpu_marks.to_numpy().reshape(-1, 1))
+            mmscaler.fit(cpu_marks.to_numpy().reshape(-1, 1))
             df[column] = mmscaler.transform(df[column].to_numpy().reshape(-1, 1))
         elif column == 'GPU':
             # we need to fit with all the possible benchmarks, not only the ones in the case base
-            mmscaler = mmscaler.fit(gpu_marks.to_numpy().reshape(-1, 1))
+            mmscaler.fit(gpu_marks.to_numpy().reshape(-1, 1))
             df[column] = mmscaler.transform(df[column].to_numpy().reshape(-1, 1))
         elif column == 'RAM (GB)':
             # we need to fit with all the possible benchmarks, not only the ones in the case base
-            mmscaler = mmscaler.fit(ram_values.to_numpy().reshape(-1, 1))
+            mmscaler.fit(ram_values.to_numpy().reshape(-1, 1))
             df[column] = mmscaler.transform(df[column].to_numpy().reshape(-1, 1))
         elif column == 'SSD (GB)':
             # we need to fit with all the possible benchmarks, not only the ones in the case base
-            mmscaler = mmscaler.fit(ssd_values.to_numpy().reshape(-1, 1))
+            mmscaler.fit(ssd_values.to_numpy().reshape(-1, 1))
             df[column] = mmscaler.transform(df[column].to_numpy().reshape(-1, 1))
         elif column == 'HDD (GB)':
             # we need to fit with all the possible benchmarks, not only the ones in the case base
-            mmscaler = mmscaler.fit(hdd_values.to_numpy().reshape(-1, 1))
+            mmscaler.fit(hdd_values.to_numpy().reshape(-1, 1))
             df[column] = mmscaler.transform(df[column].to_numpy().reshape(-1, 1))
         elif column == 'Optical Drive (1 = DVD, 0 = None)':
             # we need to fit with all the possible benchmarks, not only the ones in the case base
-            mmscaler = mmscaler.fit(opt_drive_values.to_numpy().reshape(-1, 1))
+            mmscaler.fit(opt_drive_values.to_numpy().reshape(-1, 1))
             df[column] = mmscaler.transform(df[column].to_numpy().reshape(-1, 1))
         else:
             df[column] = mmscaler.fit_transform(df[column].to_numpy().reshape(-1, 1))
+
         transformations[column]['scaler'] = mmscaler
 
     return df, transformations
