@@ -30,7 +30,7 @@ class TestCase(unittest.TestCase)):
     def test_whatever(self):
         a = 1
         # do something with a
-        self.assertTrue(a, 1) # replace 1 with expected value
+        self.assertEqual(a, 1) # replace 1 with expected value
 
 if __name__ == "__main__":
     unittest.main()
