@@ -1,37 +1,42 @@
 # System/standard imports
 import logging
-import numpy
 
 # Our imports
 
 # Constants
 
 # Module-global data
-reuse_logger=logging.getLogger('reuse')
+reuse_logger = logging.getLogger('reuse')
+
 
 # Function definitions
 
 # Class definitions
 class AdaptPC:
-    """class used to perform the Reuse function and adapt a case to the input request
     """
+    Class used to perform the Reuse function and adapt a case to the input request
+    """
+
     def __init__(self, pcbr):
         """initialize the Reuse class and load domain knowledge/rules/etc.
         """
-        self.pcbr=pcbr
+        self.pcbr = pcbr
 
     def adapt(self, nearest_neighbors, user_request):
-        """start with case from case base and then apply domain knowlege to adapt it to user's needs
+        """start with case from case base and then apply domain knowledge to adapt it to user's needs
         """
-        adapted_solution = nearest_neighbors[0,0].copy()
+        adapted_solution = nearest_neighbors[0, 0].copy()
 
         # Use domain knowledge to adapt it
 
+        # Kevin: Constraints will be solved after the adaptation stage. It takes into account possible compatibility
+        #        issues. The solution is already optimized based on the weighted kNN.
+        """
         # TODO: May need to make this a loop and break when "good enough"
         good_enough = False
         while not good_enough:
             # First check if there are any unmet constraints
-            self.check_constraints(adapted_solution,user_request.constraints)
+            self.check_constraints(adapted_solution, user_request.constraints)
 
             # Next check if there are any HW incompatibilities
             self.check_compatibility(adapted_solution)
@@ -40,6 +45,7 @@ class AdaptPC:
             self.check_optimizations(adapted_solution)
 
             good_enough = True
+        """
 
         # May need to convert from benchmark to CPU/GPU here? Adapted solution probably needs a bit more
         # than just the numeric data

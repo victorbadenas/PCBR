@@ -3,13 +3,13 @@
 import pandas as pd
 import numpy as np
 
-cases = pd.read_csv('data/PC_Specs - Cases.csv', index_col=0)
-cpu_table = pd.read_csv('data/PC_Specs - CPU Table.csv', index_col=0)
-gpu_table = pd.read_csv('data/PC_Specs - GPU Table.csv', index_col=0)
-hdd_table = pd.read_csv('data/PC_Specs - HDD Table.csv', index_col=0)
-ssd_table = pd.read_csv('data/PC_Specs - SSD Table.csv', index_col=0)
-ram_table = pd.read_csv('data/PC_Specs - RAM Table.csv', index_col=0)
-opdr_table = pd.read_csv('data/PC_Specs - Optical Drive Table.csv', index_col=0)
+cases = pd.read_csv('data/pc_specs.csv', index_col=0)
+cpu_table = pd.read_csv('data/cpu_table.csv', index_col=0)
+gpu_table = pd.read_csv('data/gpu_table.csv', index_col=0)
+hdd_table = pd.read_csv('data/hdd_table.csv', index_col=0)
+ssd_table = pd.read_csv('data/ssd_table.csv', index_col=0)
+ram_table = pd.read_csv('data/ram_table.csv', index_col=0)
+opdr_table = pd.read_csv('data/optical_drive_table.csv', index_col=0)
 
 cases.columns
 

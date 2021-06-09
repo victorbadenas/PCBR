@@ -3,9 +3,8 @@ import numpy as np
 from typing import Union
 from pathlib import Path
 
-from .preprocessor import read_table
-
 _NUMERIC_KINDS = set('buifc')
+
 
 def is_numeric(array):
     """Determine whether the argument has a numeric datatype, when
@@ -29,7 +28,7 @@ def is_numeric(array):
 
 
 class Mapper:
-    def __init__(self, dataframe:pd.DataFrame, scaler_columns=None, scaler=None):
+    def __init__(self, dataframe: pd.DataFrame, scaler_columns=None, scaler=None):
         self.data = dataframe
         self.scaler = scaler
         self.scaler_columns = scaler_columns
@@ -37,7 +36,7 @@ class Mapper:
             self._scale_data()
 
     @classmethod
-    def from_csv(cls, path: Union[str, Path]=None, **kwargs):
+    def from_csv(cls, path: Union[str, Path] = None, **kwargs):
         if path is None:
             raise ValueError('path is required for Mapper.from_csv(path) method')
         path = Path(path)
@@ -60,11 +59,11 @@ class Mapper:
             raise ValueError('X must be a np.array')
         if from_col not in self.data.columns or to_col not in self.data.columns:
             raise ValueError(f'Columns {(from_col, to_col)} not in dataframe')
-        
+
         source_data = self.data[from_col].to_numpy()
         target_data = self.data[to_col].to_numpy()
         if is_numeric(source_data):
-            nn_index = np.argmin(np.abs(source_data[None,:] - X[:, None]), axis=1)
+            nn_index = np.argmin(np.abs(source_data[None, :] - X[:, None]), axis=1)
             return target_data[nn_index]
         else:
             map_dict = dict(zip(source_data, target_data))

@@ -140,3 +140,6 @@ cscope.out
 
 # Editor temporary files
 *.swp
+
+# Script output
+data/new_prices.csv
