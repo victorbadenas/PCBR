@@ -67,8 +67,13 @@ class AdaptPC:
 
         # Transformation of Log2 components.
         for idx in range(1, 4):
-            adapted_solution[idx] = np.power(2, scalers[idx-1].inverse_transform([[adapted_solution[idx]]])[0][0])
-
+            adapted_solution[idx] = np.round(
+                np.power(
+                    2,
+                    scalers[idx-1].inverse_transform(
+                        [[adapted_solution[idx]]])[0][0]
+                ) - 1
+            )
         # TODO: Transform price using sum of price components instead of inverse_transform of weighted average.
         adapted_solution[-1] = scalers[-1].inverse_transform([[adapted_solution[-1]]])[0][0]
 

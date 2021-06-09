@@ -74,8 +74,7 @@ class Mapper:
         for column in self.scaler_columns:
             if self.scaler['log2']:
                 self.data[column] = np.log2(
-                    self.data[column],
-                    where=self.data[column] != 0
+                    self.data[column] + 1
                 )
             if hasattr(self.scaler['scaler'], 'transform'):
                 self.data[column] = self.scaler['scaler'].transform(

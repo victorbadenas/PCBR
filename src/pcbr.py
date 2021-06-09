@@ -66,8 +66,8 @@ class UserRequest:
             if mapper['log2']:
                 value = np.log2(value+1)
 
-            profile[i] = mapper['scaler'].transform(np.array(value).reshape(1,1))[0,0]
-        return np.array(profile)
+            profile[i] = mapper['scaler'].transform([[value]])[0,0]
+        return np.array(profile).reshape(1, -1)
 
     def _process_preferences(self, pref_str:str, scalers:dict=None) -> np.ndarray:
         # Input format: Preferences matrix survey answers (string). Importance on scale of 1-5, where 1 is least
