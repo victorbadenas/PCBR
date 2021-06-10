@@ -50,9 +50,20 @@ def map_to_closest(adapted_solution, mappers, scalers):
             )
         return tmp_adapted_solution
 
-def map_to_numeric(symbolic, mappers, scalers):
+def map_to_numeric(symbolic, mappers, scalers, additional_info=None):
         # Copy data so we don't destroy it
         numeric = symbolic.copy()
+
+        # If additional info is requested, set up the structure
+        if additional_info == []:
+            cpu_brand=mappers[0].transform(np.array(numeric[0]),
+                                            from_col=target_columns[0],
+                                            to_col='Manufacturer')[0]
+            gpu_brand=mappers[4].transform(np.array(numeric[4]),
+                                            from_col=target_columns[4],
+                                            to_col='Manufacturer')[0]
+            additional_info.append(cpu_brand)
+            additional_info.append(gpu_brand)
 
         # Convert symbolic things (CPU/GPU names) to numbers
         numeric[0]=mappers[0].transform(np.array(numeric[0]),
@@ -104,7 +115,10 @@ class AdaptPC:
         reuse_logger.debug('Numeric representation: ' + str(adapted_solution))
         closest=map_to_closest(adapted_solution, mappers, scalers)
         reuse_logger.debug('Configuration after weighted adaptation: ' + str(map_to_closest(adapted_solution, mappers, scalers)))
-        reuse_logger.debug('Numeric representation (closest): ' + str(map_to_numeric(closest, mappers, scalers)))
+        additional_info=[]
+        numeric=map_to_numeric(closest, mappers, scalers,additional_info=additional_info)
+        reuse_logger.debug('Numeric representation (closest): ' + str(numeric))
+        reuse_logger.debug('Additional info: ' + str(additional_info))
 
         reuse_logger.debug('Checking constraints and optimizing...')
         reuse_logger.debug('CPU Brand: '  + str(user_request.constraints.cpu_brand))
