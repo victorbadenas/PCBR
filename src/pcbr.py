@@ -97,7 +97,7 @@ class PCBR:
                 self.mock_requests_idx = 0
 
             # end of loop control.
-            if self.mock_requests_idx > len(self.mock_user_requests):
+            if self.mock_requests_idx >= len(self.mock_user_requests):
                 if mode == 'one_pass':
                     # if we reached the end of the mock list, 
                     # return None as no more instances are available.
@@ -146,21 +146,36 @@ class PCBR:
 
 
 if __name__ == '__main__':
+    import time
     setup_logging()
 
+    # initialize pcbr
     pcbr = PCBR()
 
-    user_request = pcbr.get_user_request(mock_file='../data/mock_requests.tsv')
+    while True:
+        # starting time
+        st = time.time()
 
-    nearest_cases, distances = pcbr.retrieve(new_instance=user_request.profile, feature_weights=user_request.preferences, n_neighbors=3)
-    pcbr_logger.debug(nearest_cases)
-    pcbr_logger.debug(nearest_cases.shape)
+        user_request = pcbr.get_user_request(mock_file='../data/mock_requests.tsv', mode='one_pass')
 
-    proposed_solution = pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances, user_request=user_request)
+        if not isinstance(user_request, UserRequest):
+            # if get_user_request returns None, the mock file lines have been exhausted, stop run
+            break
 
-    # Uncomment as these functions get implemented
-    # revision_result = pcbr.revise(proposed_solution)
-    # pcbr.retain(proposed_solution, revision_result)
+        # user_request is a UserRequest object, keep moving forward.
+        nearest_cases, distances = pcbr.retrieve(new_instance=user_request.profile, feature_weights=user_request.preferences, n_neighbors=3)
+        pcbr_logger.debug(nearest_cases)
+        pcbr_logger.debug(nearest_cases.shape)
+
+        proposed_solution = pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances, user_request=user_request)
+
+        # Uncomment as these functions get implemented
+        # revision_result = pcbr.revise(proposed_solution)
+        # pcbr.retain(proposed_solution, revision_result)
+
+        # compute ending time and print it, move onto next item
+        en = time.time() - st
+        pcbr_logger.debug(f'time for processing an instance {en:.2f}s')
 
     # TODO: Should we write new case base to file and exit or just keep looping?
     # Kevin: I think that we talked yesterday about just keeping the loop.
