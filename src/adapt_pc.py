@@ -50,6 +50,31 @@ def map_to_closest(adapted_solution, mappers, scalers):
             )
         return tmp_adapted_solution
 
+def map_to_numeric(symbolic, mappers, scalers):
+        # Copy data so we don't destroy it
+        numeric = symbolic.copy()
+
+        # Convert symbolic things (CPU/GPU names) to numbers
+        numeric[0]=mappers[0].transform(np.array(numeric[0]),
+                                        from_col=target_columns[0],
+                                        to_col=mappers[0].scaler_columns[0])[0]
+        numeric[4]=mappers[4].transform(np.array(numeric[4]),
+                                        from_col=target_columns[4],
+                                        to_col=mappers[4].scaler_columns[0])[0]
+
+        # Transformation of Log2 components.
+        numeric[1:4] = np.log2(numeric[1:4])
+
+        for i in range(1,4):
+            numeric[i]=mappers[i].scaler['scaler'].transform(np.array(numeric[i]).reshape(-1,1))
+            numeric[i]=mappers[i].transform(numeric[i],
+                                            from_col=target_columns[i],
+                                            to_col=mappers[i].scaler_columns[0])[0]
+
+        # Note: No transformations required for optical drive or price
+
+        return numeric
+
 # Class definitions
 class AdaptPC:
     """
@@ -76,10 +101,12 @@ class AdaptPC:
         # Use domain knowledge to adapt it
         # Kevin: Constraints will be solved after the adaptation stage. It takes into account possible compatibility
         #        issues. The solution is already optimized based on the weighted kNN.
+        reuse_logger.debug('Numeric representation: ' + str(adapted_solution))
+        closest=map_to_closest(adapted_solution, mappers, scalers)
         reuse_logger.debug('Configuration after weighted adaptation: ' + str(map_to_closest(adapted_solution, mappers, scalers)))
+        reuse_logger.debug('Numeric representation (closest): ' + str(map_to_numeric(closest, mappers, scalers)))
 
         reuse_logger.debug('Checking constraints and optimizing...')
-        reuse_logger.debug(user_request.constraints)
         reuse_logger.debug('CPU Brand: '  + str(user_request.constraints.cpu_brand))
         reuse_logger.debug('GPU Brand: '  + str(user_request.constraints.gpu_brand))
         reuse_logger.debug('Min RAM: '    + str(user_request.constraints.min_ram))
@@ -87,6 +114,8 @@ class AdaptPC:
         reuse_logger.debug('Preferences: ' + str(user_request.preferences))
         reuse_logger.debug('Raw Preferences: ' + str(user_request.raw_preferences))
 
+        constraints_ok=user_request.constraints.ok(adapted_solution)
+        reuse_logger.debug('Constraints OK: ' + str(constraints_ok))
         """
         # TODO: May need to make this a loop and break when "good enough"
         good_enough = False
