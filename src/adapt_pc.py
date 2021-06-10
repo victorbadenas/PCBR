@@ -84,6 +84,9 @@ class AdaptPC:
         reuse_logger.debug('GPU Brand: '  + str(user_request.constraints.gpu_brand))
         reuse_logger.debug('Min RAM: '    + str(user_request.constraints.min_ram))
         reuse_logger.debug('Max budget: ' + str(user_request.constraints.max_budget))
+        reuse_logger.debug('Preferences: ' + str(user_request.preferences))
+        reuse_logger.debug('Raw Preferences: ' + str(user_request.raw_preferences))
+
         """
         # TODO: May need to make this a loop and break when "good enough"
         good_enough = False

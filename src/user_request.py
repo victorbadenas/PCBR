@@ -10,7 +10,7 @@ class UserRequest:
 
     def __init__(self, profile_str, pref_str, constraints_str, scalers, feature_relevance_matrix):
         self.profile = self._process_profile(profile_str, scalers)
-        self.preferences = self._process_preferences(pref_str, feature_relevance_matrix, scalers)
+        self.preferences, self.raw_preferences = self._process_preferences(pref_str, feature_relevance_matrix, scalers)
         self.constraints = self._process_constraints(constraints_str, scalers)
 
     def _process_profile(self, profile_str:str, scalers:dict=None) -> np.ndarray:
@@ -41,17 +41,30 @@ class UserRequest:
         return np.array(profile).reshape(1, -1)
 
     def _process_preferences(self, pref_str:str, feature_relevance_matrix:np.ndarray, scalers:dict=None) -> np.ndarray:
-        # Input format: Preferences matrix survey answers (string). Importance on scale of 1-5, where 1 is least
-        #               and 5 is most. Categories are: budget, performance, multi-tasking, gaming,
-        #               streaming videos, editing videos/photos/music, fast startup/shutdown, video chat
+        # Input format: Two parts:
+        #                - Preferences matrix survey answers (string). Importance on scale of 1-5, where 1 is least
+        #                  and 5 is most important. Categories are: budget, performance, multi-tasking, gaming,
+        #                  streaming videos, editing videos/photos/music, fast startup/shutdown, video chat
+        #                - Set of 5 application categories that user indicates if they use or not (1 or 0):
+        #                  MS Office, Tensorflow/Keras/PyTorch, Compilers, High-Perf Games, Low-Perf Games
         # Input example: '5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0'
-        # Output format: numpy array of answers
-        # Example output: [5 2 3 1 2 1 3 4 1 0 1 0 0]
+        # Output format: feature relevance matrix: numpy array of answers, normalized from 0 to 1 (or -0.25 to 1?)
+        #                raw preferences: numpy array of answers, normalized from 0 to 1
+        # Example output: feature relevance matrix: [0.591125 0.64875  0.52925  0.82975  0.608875 0.658375
+        #                                            0.624875 0.7085   0.539    0.58325  0.6145   0.6325  ]
+        #                 raw preferences: [ 1.    0.25  0.5   0.    0.25  0.    0.5   0.75  0.   -0.25  0.   -0.25
+        #                                   -0.25]
+        # TODO Victor: Can you check over the feature relevance matrix part and make sure you really intended for
+        #              the preferences_scaled array to have -0.25 as a value in the last 5 elements? Maybe the
+        #              0's/1's in the last 5 places should be changed to 1 or 5 in order to agree with the scaling
+        #              of the first 8 elements (or only scale the first 8 and leave the last 5 as 0/1)
+        #              For the raw preferences I don't care too much since I'm only going to use the first 8.
         preferences_arr = list(map(int, pref_str.split(',')))
         preferences_scaled = (np.array(preferences_arr).astype(np.float) - 1) / 4
+        # TODO: Check the previous line because it can produce -0.25 as a value (inconsistent scales in [:8] and [8:]
         feature_relevance = preferences_scaled@feature_relevance_matrix
         feature_relevance_scaled = feature_relevance / 2 + .5
-        return feature_relevance_scaled
+        return feature_relevance_scaled, preferences_scaled
 
 
     def _process_constraints(self, constraints_str:str, scalers:dict=None) -> Constraints:
