@@ -221,6 +221,10 @@ class PCBR:
     def revise(self, proposed_solution=None):
         assert proposed_solution is not None
 
+        print('\n***************************************\n')
+        print('\t\t\tEXPERT OPINION')
+        print('***************************************')
+
         proposed_solutions = [proposed_solution]
         index = ['Proposed solution']
         columns = self.target_attributes.columns.tolist()
@@ -228,10 +232,12 @@ class PCBR:
         satisfactory = self.ask_if('Is the latter proposed solution satisfactory (y/n)?')
         if not satisfactory:
             revise_result = self.revise_possibilities(proposed_solutions, columns)
-            print('***************************************\n')
-            index = ['Final revised solution']
-            self.print_solutions([revise_result], columns, index, print_pre_message=False)
-            print('***************************************')
+            if revise_result is not None:
+                print('***************************************')
+                print('\t\tEXPERT OPINION END\n')
+                index = ['Final revised solution']
+                self.print_solutions([revise_result], columns, index, print_pre_message=False)
+                print('***************************************')
         else:
             revise_result = proposed_solution
             print('The proposed solution has been confirmed!')
@@ -306,7 +312,9 @@ class PCBR:
                     satisfactory = not self.ask_if('Would you like to change something more (y/n)?')
             return self.ask_which_solution_is_final(proposed_solutions, index)
         else:
+            print('***************************************\n')
             print('The proposed solution has been dropped!')
+            print('***************************************')
             return None
 
     def extract_all_values_for_component(self, selected_component):
@@ -403,7 +411,8 @@ if __name__ == '__main__':
         proposed_solution = pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances, user_request=user_request)
 
         revision_result = pcbr.revise(proposed_solution)
-        pcbr.retain(proposed_solution, revision_result)
+        if revision_result is not None: # If the expert has not dropped the solution
+            pcbr.retain(proposed_solution, revision_result)
 
         # compute ending time and print it, move onto next item
         en = time.time() - st
