@@ -2,6 +2,8 @@
 import logging
 import numpy as np
 
+from collections import defaultdict
+
 # Our imports
 from user_request import UserRequest
 
@@ -55,6 +57,9 @@ class AdaptPC:
         # Alternate tables if preferred brand does not work
         self.cpu_table_alt = None
         self.gpu_table_alt = None
+
+        # List of priorities based on user preference. Will be CPU, GPU, RAM, SSD, HDD, Budget in some order
+        self.priorities = None
 
     def adapt(self, nearest_neighbors, distances, mappers, scalers, user_request):
         """start with case from case base and then apply domain knowledge to adapt it to user's needs
@@ -155,6 +160,32 @@ class AdaptPC:
         self.ssd_table = ssd_table
         self.hdd_table = hdd_table
         self.opt_drive_table = opt_table
+
+        # Now, attempt to extract the priority order in which rules should be applied based on preferences
+        reuse_logger.debug(self.user_request.raw_preferences)
+        prefs=self.user_request.raw_preferences
+        voter=defaultdict(lambda : 0)
+        voter['Budget'] += prefs[0]*4+1
+        if prefs[3] >= 0.5:
+            # GPU More important for performance if Gaming is important
+            voter['CPU'] += (prefs[1]*4+1)/2
+            voter['GPU'] += prefs[1]*4+1
+        else:
+            # Otherwise CPU more important
+            voter['CPU'] += prefs[1]*4+1
+            voter['GPU'] += (prefs[1]*4+1)/2
+        # Make RAM as important as Multitasking/Production
+        voter['RAM'] += ((prefs[2]*4+1)+(prefs[5]*4+1))/2
+        voter['SSD'] += prefs[6]*4+1
+        voter['HDD'] += (1-prefs[6])*4+1
+        # Tie-breaker for SSD/HDD based on perf vs. budget
+        if prefs[1] > prefs[0]:
+            voter['SSD'] += 1
+        else:
+            voter['HDD'] += 1
+        print(voter)
+        voter = sorted(voter, key=lambda x: x[1],reverse=True)
+        print(voter)
 
     def _apply_rules(self):
         reuse_logger.debug('applying rules...')
