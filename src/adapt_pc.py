@@ -74,7 +74,7 @@ def map_to_numeric(symbolic, mappers, scalers, additional_info=None):
                                         to_col=mappers[4].scaler_columns[0])[0]
 
         # Transformation of Log2 components.
-        numeric[1:4] = np.log2(numeric[1:4])
+        numeric[1:4] = np.log2(np.array(numeric[1:4])+1)
 
         for i in range(1,4):
             numeric[i]=mappers[i].scaler['scaler'].transform(np.array(numeric[i]).reshape(-1,1))
