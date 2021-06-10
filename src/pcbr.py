@@ -1,4 +1,6 @@
 import os, sys, logging
+from collections.abc import Callable
+from typing import Union
 import numpy as np
 
 sys.path.append(os.path.dirname(__file__))
@@ -6,6 +8,7 @@ sys.path.append(os.path.dirname(__file__))
 from data.preprocessor import read_initial_cbl, read_table
 from data.mapper import Mapper
 from utils.io import read_file
+from utils.typing import represents_int, str_to_dict
 from neighbors.knn import KNeighborsClassifier
 from adapt_pc import AdaptPC
 from user_request import UserRequest
@@ -117,8 +120,78 @@ class PCBR:
             return UserRequest(*request_strings, self.transformations,self.feature_relevance_matrix)
         else:
             # TODO: CLI request
-            user_req_rv = UserRequest(None,None,None,self.transformations, self.feature_relevance_matrix)
+            profile_str, pref_str, constraints_str = self.get_cli_requests()
+            if profile_str is None or pref_str is None or constraints_str is None:
+                return None
+            user_req_rv = UserRequest(
+                profile_str,
+                pref_str,
+                constraints_str,
+                self.transformations,
+                self.feature_relevance_matrix
+            )
             return user_req_rv
+
+    def get_cli_requests(self):
+        profile_str = self.get_user_input(
+            'input profile (12 comma separated values i.e. 2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0):\n',
+            self.profile_str_valid
+        )
+        if profile_str is None:
+            return None, None, None
+
+        pref_str = self.get_user_input(
+            'input preferences (13 comma separated values i.e. 5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0):\n',
+            self.preference_str_valid
+        )
+        if pref_str is None:
+            return None, None, None
+
+        constraints_str = self.get_user_input(
+            'input constraints (key:value pairs i.e. cpu_brand: PreferIntel, gpu_brand: AMD, min_ram: 32, max_budget: 1500):\n',
+            self.constraints_str_valid
+        )
+        if constraints_str is None:
+            return None, None, None
+
+        return profile_str, pref_str, constraints_str
+
+    @staticmethod
+    def get_user_input(input_message_string:str, expected_format:Callable, exit_str:str='exit') -> Union[str, None]:
+        user_input_string = input(input_message_string).strip()
+        if user_input_string == exit_str:
+            return None
+        while not expected_format(user_input_string):
+            print('Wrong format...')
+            user_input_string = input(input_message_string).strip()
+            if user_input_string == exit_str:
+                return None
+        return user_input_string
+
+    @staticmethod
+    def profile_str_valid(string:str):
+        split_str = string.split(',')
+        if len(split_str) != 12:
+            return False
+        int_check = list(map(represents_int, split_str))
+        int_check[2] = not int_check[2]
+        return all(int_check)
+
+    @staticmethod
+    def preference_str_valid(string:str):
+        split_str = string.split(',')
+        if len(split_str) != 13:
+            return False
+        int_check = tuple(map(represents_int, split_str))
+        return all(int_check)
+
+    @staticmethod
+    def constraints_str_valid(string:str):
+        try:
+            str_to_dict(string)
+            return True
+        except Exception:
+            return False
 
     def retrieve(self, new_instance=None, feature_weights=None, n_neighbors=2):
         if new_instance is None:
@@ -156,7 +229,7 @@ if __name__ == '__main__':
         # starting time
         st = time.time()
 
-        user_request = pcbr.get_user_request(mock_file='../data/mock_requests.tsv', mode='one_pass')
+        user_request = pcbr.get_user_request()
 
         if not isinstance(user_request, UserRequest):
             # if get_user_request returns None, the mock file lines have been exhausted, stop run

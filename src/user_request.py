@@ -1,7 +1,7 @@
 import numpy as np
 
 from constraints import Constraints
-
+from utils.typing import str_to_dict
 class UserRequest:
     profile_format = ["Experience", "WFH", "Primary use", "Budget", 
         "Replace (1-most frequent; 4-least frequent)", 
@@ -69,10 +69,7 @@ class UserRequest:
         # Output format: Constraints object
         # Kevin: This part will be processed after the weighted kNN so as to try to solve the different constraints
         #        by giving different options to the user via UI.
-        constraints_dict = dict()
-        for constraint in constraints_str.split(","):
-            k, v = constraint.split(':')
-            constraints_dict[k.strip()] = v.strip()
+        constraints_dict = str_to_dict(constraints_str)
         return Constraints(constraints_dict)
 
 
