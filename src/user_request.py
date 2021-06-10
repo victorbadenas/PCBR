@@ -54,14 +54,10 @@ class UserRequest:
         #                                            0.624875 0.7085   0.539    0.58325  0.6145   0.6325  ]
         #                 raw preferences: [ 1.    0.25  0.5   0.    0.25  0.    0.5   0.75  0.   -0.25  0.   -0.25
         #                                   -0.25]
-        # TODO Victor: Can you check over the feature relevance matrix part and make sure you really intended for
-        #              the preferences_scaled array to have -0.25 as a value in the last 5 elements? Maybe the
-        #              0's/1's in the last 5 places should be changed to 1 or 5 in order to agree with the scaling
-        #              of the first 8 elements (or only scale the first 8 and leave the last 5 as 0/1)
-        #              For the raw preferences I don't care too much since I'm only going to use the first 8.
         preferences_arr = list(map(int, pref_str.split(',')))
-        preferences_scaled = (np.array(preferences_arr).astype(np.float) - 1) / 4
-        # TODO: Check the previous line because it can produce -0.25 as a value (inconsistent scales in [:8] and [8:]
+        preferences_scaled = np.array(preferences_arr).astype(np.float)
+        preferences_scaled[:8] = (preferences_scaled[:8] - 1) / 4 #scale first 8 components and leave the last 5 as boolean entries
+
         feature_relevance = preferences_scaled@feature_relevance_matrix
         feature_relevance_scaled = feature_relevance / 2 + .5
         return feature_relevance_scaled, preferences_scaled
