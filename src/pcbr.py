@@ -279,19 +279,20 @@ class PCBR:
                         selected_component_idx = int(cli_input)
                         selected_component = remaining_components[selected_component_idx]
                         remaining_components.pop(selected_component_idx)
-                        print(f'{selected_component_idx} --> {selected_component}')
                         all_values = self.extract_all_values_for_component(selected_component)
                         latest_solution = proposed_solutions[len(proposed_solutions) - 1]
-                        latest_value = latest_solution[components.index(selected_component)]
+                        latest_solution_price = proposed_solutions[len(proposed_solutions) - 1][-1]
+                        component_id = components.index(selected_component)
+                        latest_value = latest_solution[component_id]
                         all_values.remove(latest_value)
                         if len(all_values) > 0:
                             selected_new_value = self.show_values_and_get_choice(selected_component, all_values, latest_value)
+                            difference = self.calculate_price_difference(selected_component, latest_value, selected_new_value)
+                            latest_solution_price += difference
                             new_solution = latest_solution.copy()
-                            new_solution[selected_component_idx] = selected_new_value
+                            new_solution[component_id] = selected_new_value
+                            new_solution[-1] = latest_solution_price
                             proposed_solutions.append(new_solution)
-                            # TODO get the closest value from the knn?
-                            # TODO modify the price accordingly
-                            # TODO Constraints!
                             break
                         else:
                             print('Sorry but the chosen component has not valid alternatives!')
@@ -331,6 +332,21 @@ class PCBR:
                     print(f'Invalid choice: {cli_input}')
             else:
                 print(f'Invalid choice: {cli_input}')
+
+    def calculate_price_difference(self, selected_component, latest_value, selected_new_value):
+        components_map = {'CPU': ('../data/cpu_table.csv', 'CPU Name', 'MSRP'),
+                 'RAM (GB)': ('../data/ram_table.csv', 'Capacity', 'Price'),
+                 'SSD (GB)': ('../data/ssd_table.csv', 'Capacity', 'Price'),
+                 'HDD (GB)': ('../data/hdd_table.csv', 'Capacity', 'Price'),
+                 'GPU': ('../data/gpu_table.csv', 'GPU Name', 'MSRP'),
+                 'Optical Drive (1 = DVD; 0 = None)': ('../data/optical_drive_table.csv', 'Boolean State', 'Price')}
+        df = read_table(components_map[selected_component][0], index_col=None)
+        old_row = df.loc[df[components_map[selected_component][1]] == latest_value]
+        new_row = df.loc[df[components_map[selected_component][1]] == selected_new_value]
+        old_value = old_row[components_map[selected_component][2]].values[0]
+        new_value = new_row[components_map[selected_component][2]].values[0]
+        difference = new_value - old_value
+        return difference
 
     def print_all_values(self, selected_component, values):
         dataframe = pd.DataFrame(values, columns=[selected_component])
