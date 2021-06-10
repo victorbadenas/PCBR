@@ -1,0 +1,4 @@
+2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0	5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0	cpu_brand: Intel, gpu_brand: PreferNVIDIA, max_budget: 1000
+2, 2, Work, 1, 3, 1, 0, 0, 0, 1, 0, 0	5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0	cpu_brand: AMD, gpu_brand: NVIDIA, max_budget: 2000
+2, 2, ML, 1, 3, 1, 0, 0, 0, 1, 0, 0	5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0	cpu_brand: PreferIntel, gpu_brand: AMD, max_budget: 1500
+2, 2, ML, 1, 3, 1, 0, 0, 0, 1, 0, 0	5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0	cpu_brand: PreferIntel, gpu_brand: AMD, min_ram: 32, max_budget: 1500

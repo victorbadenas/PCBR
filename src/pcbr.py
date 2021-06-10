@@ -1,13 +1,18 @@
 import os, sys, logging
+from collections.abc import Callable
+from typing import Union
 import numpy as np
-import pandas as pd
-from data.preprocessor import read_initial_cbl, read_table
-from data.mapper import Mapper
-from neighbors.knn import KNeighborsClassifier
-from adapt_pc import AdaptPC
-from constraints import Constraints
 
 sys.path.append(os.path.dirname(__file__))
+
+from data.preprocessor import read_initial_cbl, read_table
+import pandas as pd
+from data.mapper import Mapper
+from utils.io import read_file
+from utils.typing import represents_int, str_to_dict
+from neighbors.knn import KNeighborsClassifier
+from adapt_pc import AdaptPC
+from user_request import UserRequest
 
 # Logger objects
 pcbr_logger = logging.getLogger('pcbr')
@@ -30,73 +35,29 @@ def setup_logging():
     retain_logger.setLevel(logging.INFO)
 
 
-class UserRequest:
-    def __init__(self, profile_str, pref_str, constraints_str):
-        self.profile = self._process_profile(profile_str)
-        self.preferences = self._process_preferences(pref_str)
-        self.constraints = self._process_constraints(constraints_str)
-
-    def _process_profile(self, profile_str):
-        # Input format: Experience, WFH, Primary Use, Budget, Replace, Office, Photoshop, VideoChat, ML, Compilers, HighPerformanceGames, LowPerformanceGames
-        # Input example (exactly matches case 2): '2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0'
-        # Output format: numpy array suitable to look up nearest case in case library (Note: you will need to
-        #                apply pre-processing to obtain the correct output format)
-        # Example output: [[0.25       1.         0.6        0.         0.66666667 1.
-        #                   0.         0.         0.         1.         0.         0.        ]]
-
-        # TODO: Fill in this function. For now, None ok to return.
-        # Also TODO: Convert all the function header comments to nice docstrings or delete.
-        return None
-
-    def _process_preferences(self, pref_str):
-        # Input format: Preferences matrix survey answers (string). Importance on scale of 1-5, where 1 is least
-        #               and 5 is most. Categories are: budget, performance, multi-tasking, gaming,
-        #               streaming videos, editing videos/photos/music, fast startup/shutdown, video chat
-        # Input example: '5, 2, 3, 1, 2, 1, 3, 4'
-        # Output format: numpy array of answers
-        # Example output: [5 2 3 1 2 1 3 4]
-
-        # TODO: Do we want this normalized? Probably
-        # TODO: Or would we rather convert it to a weight matrix to use directly on the output features?
-        #       We're not using this yet, so Kevin/Victor, please chime in with your opinions about how
-        #       you think we should format and apply this field. For now, I will just return 1's everywhere.
-        # Kevin: I think that the weight matrix that will be applied in kNN should depend directly on these preferences.
-        #        (e.g. If the budget importance is high, then set w(price_feature) high)
-        return np.array([1, 1, 1, 1, 1, 1, 1, 1])
-
-    def _process_constraints(self, constraints_str):
-        # Input format: string with multiple comma-separated key: value pairs of constraints. 
-        # Input example: 'cpu_brand: Intel, gpu_brand: PreferNVIDIA, max_budget: 1000'
-        # Output format: Constraints object
-
-        # TODO: Convert string to constraints dict (or change Constraints object to process the string directly)
-        # Kevin: This part will be processed after the weighted kNN so as to try to solve the different constraints
-        #        by giving different options to the user via UI.
-        constraints = Constraints({'cpu_brand': 'Intel', 'gpu_brand': 'PreferNVIDIA', 'max_budget': '1000'})
-
-        return constraints
-
-
 class PCBR:
     def __init__(self, cbl_path='../data/pc_specs.csv',
-                 cpu_path='../data/cpu_table.csv',
-                 gpu_path='../data/gpu_table.csv',
-                 ram_path='../data/ram_table.csv',
-                 ssd_path='../data/ssd_table.csv',
-                 hdd_path='../data/hdd_table.csv',
-                 opt_drive_path='../data/optical_drive_table.csv'):
+                       cpu_path='../data/cpu_table.csv',
+                       gpu_path='../data/gpu_table.csv',
+                       ram_path='../data/ram_table.csv',
+                       ssd_path='../data/ssd_table.csv',
+                       hdd_path='../data/hdd_table.csv',
+                       opt_drive_path='../data/optical_drive_table.csv',
+                       feature_scalers_meta='../data/feature_scalers.json',
+                       feature_relevance_path='../data/feature_relevance.csv'):
 
         pcbr_logger.info('Initializing...')
         # read mappers
         # read case library
-        case_library, self.transformations = read_initial_cbl(path=cbl_path,
-                                                              cpu_path=cpu_path,
-                                                              gpu_path=gpu_path,
-                                                              ram_path=ram_path,
-                                                              ssd_path=ssd_path,
-                                                              hdd_path=hdd_path,
-                                                              opt_drive_path=opt_drive_path
-                                                              )
+        case_library, self.transformations = read_initial_cbl(path=cbl_path, 
+            cpu_path=cpu_path,
+            gpu_path=gpu_path,
+            ram_path=ram_path,
+            ssd_path=ssd_path,
+            hdd_path=hdd_path,
+            opt_drive_path=opt_drive_path,
+            feature_scalers_meta=feature_scalers_meta
+        )
 
         # Split into "source" (preferences) and "target" (PC specs)
         self.target_attributes = case_library[case_library.columns[:7]]
@@ -114,39 +75,146 @@ class PCBR:
         hdd_mapper = Mapper.from_csv(path=hdd_path, scaler_columns=['Capacity'],
                                      scaler=self.transformations['HDD (GB)'])
         opt_drive_mapper = Mapper.from_csv(path=opt_drive_path, scaler_columns=['Boolean State'],
-                                           scaler=self.transformations['Optical Drive (1 = DVD, 0 = None)'])
-
+                                           scaler=self.transformations['Optical Drive (1 = DVD; 0 = None)'])
+        # sorted in the order of the case_library
         self.mappers = [cpu_mapper, ram_mapper, ssd_mapper, hdd_mapper, gpu_mapper, opt_drive_mapper]
+
+        # feature relevance matrix for UserRequests
+        self.feature_relevance_matrix = np.loadtxt(feature_relevance_path, delimiter=',', ndmin=2)
 
         # initialize the adapt_pc object
         self.adapt_pc = AdaptPC(self)
         pcbr_logger.info('Initialization complete!')
 
-    def get_user_request(self) -> UserRequest:
+    def get_user_request(self, mock_file=None, mode='one_pass') -> UserRequest:
+
         # Request input here and return it.
         # For now, appears "None" is handled well by retrieve step and it defaults to a case in the library
         # Either need to pre-process the request here or in the retrieve step.
         # Also need to pass along some extra metadata, such as constraints.
-        constraints = Constraints()
-        user_req_rv = UserRequest(None, None, None)
-        return user_req_rv
+        if mock_file is not None:
 
-    def retrieve(self, new_instance=None, n_neighbors=2):
+            # initialize the data and the iteration index pointing to the 
+            # instance to be returned in this call
+            if not hasattr(self, 'mock_user_requests'):
+                self.mock_user_requests = read_file(mock_file, sep='\t')
+                self.mock_requests_idx = 0
+
+            # end of loop control.
+            if self.mock_requests_idx >= len(self.mock_user_requests):
+                if mode == 'one_pass':
+                    # if we reached the end of the mock list, 
+                    # return None as no more instances are available.
+                    return None
+                elif mode == 'cyclic':
+                    # if we reach the end of the mock list and we are in cyclic,
+                    # reset the index and start again
+                    self.mock_requests_idx = self.mock_requests_idx % len(self.mock_user_requests)
+
+            # load current iteration mock request
+            request_strings = self.mock_user_requests[self.mock_requests_idx]
+            
+            # increment pointer
+            self.mock_requests_idx += 1
+
+            # return request built with mock request trings
+            return UserRequest(*request_strings, self.transformations,self.feature_relevance_matrix)
+        else:
+            # TODO: CLI request
+            profile_str, pref_str, constraints_str = self.get_cli_requests()
+            if profile_str is None or pref_str is None or constraints_str is None:
+                return None
+            user_req_rv = UserRequest(
+                profile_str,
+                pref_str,
+                constraints_str,
+                self.transformations,
+                self.feature_relevance_matrix
+            )
+            return user_req_rv
+
+    def get_cli_requests(self):
+        profile_str = self.get_user_input(
+            'input profile (12 comma separated values i.e. 2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0):\n',
+            self.profile_str_valid
+        )
+        if profile_str is None:
+            return None, None, None
+
+        pref_str = self.get_user_input(
+            'input preferences (13 comma separated values i.e. 5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0):\n',
+            self.preference_str_valid
+        )
+        if pref_str is None:
+            return None, None, None
+
+        constraints_str = self.get_user_input(
+            'input constraints (key:value pairs i.e. cpu_brand: PreferIntel, gpu_brand: AMD, min_ram: 32, max_budget: 1500):\n',
+            self.constraints_str_valid
+        )
+        if constraints_str is None:
+            return None, None, None
+
+        return profile_str, pref_str, constraints_str
+
+    @staticmethod
+    def get_user_input(input_message_string:str, expected_format:Callable, exit_str:str='exit') -> Union[str, None]:
+        user_input_string = input(input_message_string).strip()
+        if user_input_string == exit_str:
+            return None
+        while not expected_format(user_input_string):
+            print('Wrong format...')
+            user_input_string = input(input_message_string).strip()
+            if user_input_string == exit_str:
+                return None
+        return user_input_string
+
+    @staticmethod
+    def profile_str_valid(string:str):
+        split_str = string.split(',')
+        if len(split_str) != 12:
+            return False
+        int_check = list(map(represents_int, split_str))
+        int_check[2] = not int_check[2]
+        return all(int_check)
+
+    @staticmethod
+    def preference_str_valid(string:str):
+        split_str = string.split(',')
+        if len(split_str) != 13:
+            return False
+        int_check = tuple(map(represents_int, split_str))
+        return all(int_check)
+
+    @staticmethod
+    def constraints_str_valid(string:str):
+        try:
+            str_to_dict(string)
+            return True
+        except Exception:
+            return False
+
+    def retrieve(self, new_instance=None, feature_weights=None, n_neighbors=2):
         if new_instance is None:
             new_instance = self.source_attributes.iloc[2].to_numpy().reshape(1, -1)
+        if feature_weights is None:
+            feature_weights = 'uniform'
         pcbr_logger.debug('looking for: ' + str(new_instance))
-        clf = KNeighborsClassifier(n_neighbors=n_neighbors).fit(self.source_attributes.to_numpy(),
-                                                                self.target_attributes.to_numpy())
+        clf = KNeighborsClassifier(n_neighbors=n_neighbors, weights=feature_weights).fit(
+            self.source_attributes.to_numpy(),
+            self.target_attributes.to_numpy()
+        )
         return clf.predict(new_instance)
 
-    def reuse(self, nearest_cases=None, distances=None):
+    def reuse(self, nearest_cases=None, distances=None, user_request=None):
         assert (nearest_cases is not None)
         pcbr_logger.debug('starting with: ' + str(nearest_cases))
         adapted_case = self.adapt_pc.adapt(nearest_cases, distances, self.mappers,
                                            [self.transformations['RAM (GB)']['scaler'],
                                             self.transformations['SSD (GB)']['scaler'],
                                             self.transformations['HDD (GB)']['scaler'],
-                                            self.transformations['Price (€)']['scaler']])
+                                            self.transformations['Price (€)']['scaler']],
+                                           user_request)
         pcbr_logger.debug('adapted to: ' + str(adapted_case))
         return adapted_case
 
@@ -160,7 +228,7 @@ class PCBR:
         satisfactory = self.ask_if('Is the latter proposed solution satisfactory (y/n)?')
         if not satisfactory:
             revise_result = self.revise_possibilities(proposed_solutions, columns)
-            print('***************************************')
+            print('***************************************\n')
             index = ['Final revised solution']
             self.print_solutions([revise_result], columns, index, print_pre_message=False)
             print('***************************************')
@@ -174,7 +242,7 @@ class PCBR:
         pd.set_option('max_columns', None)
         pd.set_option('display.expand_frame_repr', False)
         if print_pre_message:
-            print('---------------------------------------')
+            print('\n---------------------------------------')
             if len(index) == 1:
                 print('The proposed solution is the following:\n')
             else:
@@ -246,7 +314,7 @@ class PCBR:
                  'SSD (GB)': ('../data/ssd_table.csv', 'Capacity'),
                  'HDD (GB)': ('../data/hdd_table.csv', 'Capacity'),
                  'GPU': ('../data/gpu_table.csv', 'GPU Name'),
-                 'Optical Drive (1 = DVD, 0 = None)': ('../data/optical_drive_table.csv', 'Boolean State')}
+                 'Optical Drive (1 = DVD; 0 = None)': ('../data/optical_drive_table.csv', 'Boolean State')}
 
         df = read_table(components_map[selected_component][0], index_col=None)
         return df[components_map[selected_component][1]].values.tolist()
@@ -294,22 +362,36 @@ class PCBR:
 
 
 if __name__ == '__main__':
+    import time
     setup_logging()
 
+    # initialize pcbr
     pcbr = PCBR()
 
-    user_request = pcbr.get_user_request()
+    while True:
+        # starting time
+        st = time.time()
 
-    nearest_cases, distances = pcbr.retrieve(new_instance=user_request.profile, n_neighbors=3)
-    pcbr_logger.debug(nearest_cases)
-    pcbr_logger.debug(nearest_cases.shape)
+        # user_request = pcbr.get_user_request() # cli
+        user_request = pcbr.get_user_request(mock_file='../data/mock_requests.tsv', mode='one_pass') # mock_file
 
-    proposed_solution = pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances)
+        if not isinstance(user_request, UserRequest):
+            # if get_user_request returns None, the mock file lines have been exhausted, stop run
+            break
 
-    revision_result = pcbr.revise(proposed_solution)
-    # If the expert has not dropped the solution
-    if revision_result is not None:
+        # user_request is a UserRequest object, keep moving forward.
+        nearest_cases, distances = pcbr.retrieve(new_instance=user_request.profile, feature_weights=user_request.preferences, n_neighbors=3)
+        pcbr_logger.debug(nearest_cases)
+        pcbr_logger.debug(nearest_cases.shape)
+
+        proposed_solution = pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances, user_request=user_request)
+
+        revision_result = pcbr.revise(proposed_solution)
         pcbr.retain(proposed_solution, revision_result)
+
+        # compute ending time and print it, move onto next item
+        en = time.time() - st
+        pcbr_logger.debug(f'time for processing an instance {en:.2f}s')
 
     # TODO: Should we write new case base to file and exit or just keep looping?
     # Kevin: I think that we talked yesterday about just keeping the loop.

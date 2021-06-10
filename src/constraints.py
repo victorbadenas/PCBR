@@ -23,7 +23,7 @@ class Constraints:
                 else:
                     print('Error: invalid CPU brand (' + str(constraint_dict[k]) + ')')
             elif k == 'gpu_brand':
-                if constraint_dict[k] in ['NVIDIA', 'PreferNVIDIA', 'PreferRadeon', 'Radeon']:
+                if constraint_dict[k] in ['NVIDIA', 'PreferNVIDIA', 'PreferAMD', 'AMD']:
                     self.gpu_brand = constraint_dict[k]
                 else:
                     print('Error: invalid GPU brand (' + str(constraint_dict[k]) + ')')

@@ -14,8 +14,10 @@ class TestNeighbors(unittest.TestCase):
         X = np.random.rand(3, 4)
         y = np.eye(3)  # one hot encoded labels
         clf = KNeighborsClassifier(1).fit(X, y)
-        pred = clf.predict(X)[:, 0, :]
+        pred, distance_matrix = clf.predict(X)
+        pred = pred[:, 0, :]
         self.assertTrue((pred == y).all())
+        self.assertTrue(distance_matrix.shape == (3, 1))
 
 
 if __name__ == "__main__":
