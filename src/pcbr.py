@@ -279,15 +279,15 @@ class PCBR:
                         selected_component_idx = int(cli_input)
                         selected_component = remaining_components[selected_component_idx]
                         remaining_components.pop(selected_component_idx)
-                        print(f'{selected_component_idx} --> {selected_component}')
                         all_values = self.extract_all_values_for_component(selected_component)
                         latest_solution = proposed_solutions[len(proposed_solutions) - 1]
-                        latest_value = latest_solution[components.index(selected_component)]
+                        component_id = components.index(selected_component)
+                        latest_value = latest_solution[component_id]
                         all_values.remove(latest_value)
                         if len(all_values) > 0:
                             selected_new_value = self.show_values_and_get_choice(selected_component, all_values, latest_value)
                             new_solution = latest_solution.copy()
-                            new_solution[selected_component_idx] = selected_new_value
+                            new_solution[component_id] = selected_new_value
                             proposed_solutions.append(new_solution)
                             # TODO get the closest value from the knn?
                             # TODO modify the price accordingly
