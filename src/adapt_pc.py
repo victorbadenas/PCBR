@@ -118,6 +118,8 @@ class AdaptPC:
         return adapted_solution
 
     def _create_tables(self):
+        # This function should only depend on static things and user preferences, i.e., not read
+        # or modify the current solution
         cpu_table=self.mappers[MAP_CPU].data
         gpu_table=self.mappers[MAP_GPU].data
         ram_table=self.mappers[MAP_RAM].data
@@ -183,16 +185,56 @@ class AdaptPC:
             voter['SSD'] += 1
         else:
             voter['HDD'] += 1
-        print(voter)
         voter = sorted(voter, key=lambda x: x[1],reverse=True)
-        print(voter)
+        self.priorities=voter
 
     def _apply_rules(self):
+        # This function should modify the current solution and apply various rules in order to
+        # make it acceptable. Let's only modify the symbolic solution (if we can) and wait to
+        # update the numeric version at the very end.
+
         reuse_logger.debug('applying rules...')
+
         # if CPU==AMD GPU can't be Integrated
         # if task==(ML|Gaming) require GPU
 
-        # Need to customize the current solution according to a few rules
+        # TODO: Remove this. Temporary code to force the HDD+SDD must be greater than 0 rule
+        print('SSD:')
+        print(self.cur_symbolic_soln[MAP_SSD])
+        print('HDD:')
+        print(self.cur_symbolic_soln[MAP_HDD])
+        self.cur_symbolic_soln[MAP_SSD] = 0
+        self.cur_symbolic_soln[MAP_HDD] = 0
+
+        # Need to customize the current solution according to a few rules. Let's go in order of
+        # priorities
+        for pri in self.priorities:
+            if pri == 'CPU':
+                pass
+            elif pri == 'GPU':
+                pass
+            elif pri == 'RAM':
+                pass
+            elif pri == 'SSD':
+                if self.cur_symbolic_soln[MAP_SSD] + self.cur_symbolic_soln[MAP_HDD] == 0:
+                    #self.cur_numeric_soln[MAP_SSD] = self.ssd_table['Capacity'].iloc[0]
+                    print(self.ssd_table)
+                    print(self.ssd_table['Capacity'].iloc[0])
+                    # Pick the first one that's non-zero
+                    desired_ssd_size = self.ssd_table['Capacity'].iloc[1]
+                    print(desired_ssd_size)
+                    desired_ssd_size=self.mappers[MAP_SSD].scaler['scaler'].inverse_transform(np.array(desired_ssd_size).reshape(-1,1))[0,0]
+                    print(desired_ssd_size)
+                    desired_ssd_size = np.power(2, desired_ssd_size) - 1
+                    print(desired_ssd_size)
+                    self.cur_symbolic_soln[MAP_SSD] = desired_ssd_size
+            elif pri == 'HDD':
+                pass
+            elif pri == 'Budget':
+                pass
+
+
+
         return
 
     def _confirm_constraints(self):
