@@ -283,10 +283,13 @@ class AdaptPC:
                             self.cur_symbolic_soln[MAP_GPU] = candidate_gpus.loc[cheapest]['GPU Name']
                 pass
             elif pri == 'RAM':
+                # Already done above
                 pass
             elif pri == 'SSD':
+                # Already done above
                 pass
             elif pri == 'HDD':
+                # Already done above
                 pass
             elif pri == 'Budget':
                 pass
