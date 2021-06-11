@@ -260,8 +260,6 @@ class AdaptPC:
                             # Update it with cheapest equivalent/better CPU
                             self.cur_symbolic_soln[MAP_CPU] = candidate_cpus.loc[cheapest]['CPU Name']
             elif pri == 'GPU':
-                print(self.gpu_table)
-                print(self.mappers[MAP_GPU].data)
                 # If the current GPU isn't on the preferred list (created by constraints), try to pick one that is
                 if not any(self.gpu_table['GPU Name']==self.cur_symbolic_soln[MAP_GPU]):
                     gpu_found = False
