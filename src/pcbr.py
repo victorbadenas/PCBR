@@ -6,6 +6,7 @@ import numpy as np
 sys.path.append(os.path.dirname(__file__))
 
 from data.preprocessor import read_initial_cbl, read_table
+import pandas as pd
 from data.mapper import Mapper
 from utils.io import read_file
 from utils.typing import represents_int, str_to_dict
@@ -217,6 +218,172 @@ class PCBR:
         pcbr_logger.debug('adapted to: ' + str(adapted_case))
         return adapted_case
 
+    def revise(self, proposed_solution=None):
+        assert proposed_solution is not None
+
+        print('\n***************************************\n')
+        print('\t\t\tEXPERT OPINION')
+        print('***************************************')
+
+        proposed_solutions = [proposed_solution]
+        index = ['Proposed solution']
+        columns = self.target_attributes.columns.tolist()
+        self.print_solutions(proposed_solutions, columns, index)
+        satisfactory = self.ask_if('Is the latter proposed solution satisfactory (y/n)?')
+        if not satisfactory:
+            revise_result = self.revise_possibilities(proposed_solutions, columns)
+            if revise_result is not None:
+                print('***************************************')
+                print('\t\tEXPERT OPINION END\n')
+                index = ['Final revised solution']
+                self.print_solutions([revise_result], columns, index, print_pre_message=False)
+                print('***************************************')
+        else:
+            revise_result = proposed_solution
+            print('The proposed solution has been confirmed!')
+        return revise_result
+
+    def print_solutions(self, proposed_solutions, columns, index, print_pre_message=True):
+        dataframe = pd.DataFrame(proposed_solutions, columns=columns, index=index)
+        pd.set_option('max_columns', None)
+        pd.set_option('display.expand_frame_repr', False)
+        if print_pre_message:
+            print('\n---------------------------------------')
+            if len(index) == 1:
+                print('The proposed solution is the following:\n')
+            else:
+                print('The modified solutions are the following:\n')
+        print(dataframe.to_markdown(), '\n')
+
+    def ask_if(self, binary_question):
+        while True:
+            print(binary_question)
+            cli_input = input()
+            if cli_input is not None:
+                if cli_input.lower() == 'y' or cli_input.lower() == 'yes':
+                    return True
+                elif cli_input.lower() == 'n' or cli_input.lower() == 'no':
+                    return False
+                else:
+                    print(f'Invalid choice: {cli_input}')
+            else:
+                print(f'Invalid choice: {cli_input}')
+
+    def revise_possibilities(self, proposed_solutions, components):
+        want_to_modify = self.ask_if('Would you like to change any components (y/n)? (n will drop the solution)')
+        if want_to_modify:
+            remaining_components = components[:-1]
+            index = ['Original solution']
+            satisfactory = False
+            while len(remaining_components) > 0 and not satisfactory:
+                print('Select one component number between the following ones:')
+                for idx, component in enumerate(remaining_components):
+                    print(f'{idx} - {component}')
+                while True:
+                    cli_input = input()
+                    if cli_input is not None and (cli_input.isdigit() and 0 <= int(cli_input) < len(remaining_components)):
+                        selected_component_idx = int(cli_input)
+                        selected_component = remaining_components[selected_component_idx]
+                        remaining_components.pop(selected_component_idx)
+                        all_values = self.extract_all_values_for_component(selected_component)
+                        latest_solution = proposed_solutions[len(proposed_solutions) - 1]
+                        latest_solution_price = proposed_solutions[len(proposed_solutions) - 1][-1]
+                        component_id = components.index(selected_component)
+                        latest_value = latest_solution[component_id]
+                        all_values.remove(latest_value)
+                        if len(all_values) > 0:
+                            selected_new_value = self.show_values_and_get_choice(selected_component, all_values, latest_value)
+                            difference = self.calculate_price_difference(selected_component, latest_value, selected_new_value)
+                            latest_solution_price += difference
+                            new_solution = latest_solution.copy()
+                            new_solution[component_id] = selected_new_value
+                            new_solution[-1] = latest_solution_price
+                            proposed_solutions.append(new_solution)
+                            break
+                        else:
+                            print('Sorry but the chosen component has not valid alternatives!')
+                            print('\nSelect one component number between the following ones:')
+                    else:
+                        print(f'Invalid choice: {cli_input}')
+
+                index.append(len(index))
+                self.print_solutions(proposed_solutions, components, index)
+                if len(remaining_components) > 0:
+                    satisfactory = not self.ask_if('Would you like to change something more (y/n)?')
+            return self.ask_which_solution_is_final(proposed_solutions, index)
+        else:
+            print('***************************************\n')
+            print('The proposed solution has been dropped!')
+            print('***************************************')
+            return None
+
+    def extract_all_values_for_component(self, selected_component):
+        components_map = {'CPU': ('../data/cpu_table.csv', 'CPU Name'),
+                 'RAM (GB)': ('../data/ram_table.csv', 'Capacity'),
+                 'SSD (GB)': ('../data/ssd_table.csv', 'Capacity'),
+                 'HDD (GB)': ('../data/hdd_table.csv', 'Capacity'),
+                 'GPU': ('../data/gpu_table.csv', 'GPU Name'),
+                 'Optical Drive (1 = DVD; 0 = None)': ('../data/optical_drive_table.csv', 'Boolean State')}
+
+        df = read_table(components_map[selected_component][0], index_col=None)
+        return df[components_map[selected_component][1]].values.tolist()
+
+    def show_values_and_get_choice(self, selected_component, all_values, latest_value):
+        self.print_all_values(selected_component, all_values)
+        while True:
+            print(f'What component would you like to use instead of "{latest_value}"?')
+            cli_input = input()
+            if cli_input is not None and cli_input.isdigit():
+                if 0 <= int(cli_input) < len(all_values):
+                    return all_values[int(cli_input)]
+                else:
+                    print(f'Invalid choice: {cli_input}')
+            else:
+                print(f'Invalid choice: {cli_input}')
+
+    def calculate_price_difference(self, selected_component, latest_value, selected_new_value):
+        components_map = {'CPU': ('../data/cpu_table.csv', 'CPU Name', 'MSRP'),
+                 'RAM (GB)': ('../data/ram_table.csv', 'Capacity', 'Price'),
+                 'SSD (GB)': ('../data/ssd_table.csv', 'Capacity', 'Price'),
+                 'HDD (GB)': ('../data/hdd_table.csv', 'Capacity', 'Price'),
+                 'GPU': ('../data/gpu_table.csv', 'GPU Name', 'MSRP'),
+                 'Optical Drive (1 = DVD; 0 = None)': ('../data/optical_drive_table.csv', 'Boolean State', 'Price')}
+        df = read_table(components_map[selected_component][0], index_col=None)
+        old_row = df.loc[df[components_map[selected_component][1]] == latest_value]
+        new_row = df.loc[df[components_map[selected_component][1]] == selected_new_value]
+        old_value = old_row[components_map[selected_component][2]].values[0]
+        new_value = new_row[components_map[selected_component][2]].values[0]
+        difference = new_value - old_value
+        return difference
+
+    def print_all_values(self, selected_component, values):
+        dataframe = pd.DataFrame(values, columns=[selected_component])
+        pd.set_option('max_rows', None)
+        pd.set_option('display.expand_frame_repr', False)
+        print('---------------------------------------')
+        if values == 1:
+            print('The only possible value for the component is the following:\n')
+        else:
+            print('All possible values for the component are the following:\n')
+        print(dataframe.to_markdown(), '\n')
+
+    def ask_which_solution_is_final(self, proposed_solutions, index):
+        self.print_solutions(proposed_solutions, self.target_attributes.columns.tolist(), index)
+        while True:
+            print(f'Which configuration do you want to keep? (Select a configuration number)')
+            cli_input = input()
+            if cli_input is not None and cli_input.isdigit():
+                if 0 < int(cli_input) < len(proposed_solutions):
+                    return proposed_solutions[int(cli_input)]
+                else:
+                    print(f'Invalid choice: {cli_input}')
+            else:
+                print(f'Invalid choice: {cli_input}')
+
+    def retain(self, proposed_solution=None, revision_result=None):
+        assert proposed_solution is not None and revision_result is not None
+        # TODO measuring all distances to understand if this found configuration should be kept
+
 
 if __name__ == '__main__':
     import time
@@ -243,9 +410,9 @@ if __name__ == '__main__':
 
         proposed_solution = pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances, user_request=user_request)
 
-        # Uncomment as these functions get implemented
-        # revision_result = pcbr.revise(proposed_solution)
-        # pcbr.retain(proposed_solution, revision_result)
+        revision_result = pcbr.revise(proposed_solution)
+        if revision_result is not None: # If the expert has not dropped the solution
+            pcbr.retain(proposed_solution, revision_result)
 
         # compute ending time and print it, move onto next item
         en = time.time() - st
