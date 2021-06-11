@@ -111,11 +111,7 @@ class AdaptPC:
 
         reuse_logger.debug('Done checking constraints and optimizing.')
 
-        # Convert from numeric to human-readable, mapping to closest values where there isn't an
-        # exact match
-        adapted_solution=self._map_to_closest(adapted_solution)
-
-        return adapted_solution
+        return self.cur_symbolic_soln
 
     def _create_tables(self):
         # This function should only depend on static things and user preferences, i.e., not read
@@ -190,8 +186,8 @@ class AdaptPC:
 
     def _apply_rules(self):
         # This function should modify the current solution and apply various rules in order to
-        # make it acceptable. Let's only modify the symbolic solution (if we can) and wait to
-        # update the numeric version at the very end.
+        # make it acceptable. Unfortunately, we need to sync the symbolic and numeric versions of
+        # the solution after each rule application, but its a very small structure, so it's cheap.
 
         reuse_logger.debug('applying rules...')
 
@@ -208,7 +204,14 @@ class AdaptPC:
             elif pri == 'GPU':
                 pass
             elif pri == 'RAM':
-                pass
+                # We will just rely on the filtered RAM table to tell us what's valid
+                # Commented code provided here to perform symbolic->numeric translation if you need
+                # a more explicit comparison
+                #min_ram = self.user_request.constraints.min_ram
+                #min_ram_norm = np.log2( np.array(min_ram) + 1 )
+                #min_ram_norm = self.mappers[MAP_RAM].scaler['scaler'].transform(min_ram_norm.reshape(-1,1))[0][0]
+                if self.cur_numeric_soln[MAP_RAM] < self.ram_table['Capacity'].iloc[0]:
+                    self.cur_symbolic_soln[MAP_RAM] = self.user_request.constraints.min_ram
             elif pri == 'SSD':
                 # Note: This rule is tied to the HDD rule. Whichever one has higher priority will fire first,
                 #       giving a small SSD if this fires first
@@ -229,6 +232,12 @@ class AdaptPC:
                     self.cur_symbolic_soln[MAP_HDD] = desired_hdd_size
             elif pri == 'Budget':
                 pass
+
+            # Sync numeric and symbolic solutions each pass
+            additional_info=[]
+            self.cur_numeric_soln = self._map_to_numeric(self.cur_symbolic_soln, additional_info=additional_info)
+            self.cur_addl_info = additional_info
+            self.cur_symbolic_soln = self._map_to_closest(self.cur_numeric_soln)
 
 
 
