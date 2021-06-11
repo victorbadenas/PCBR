@@ -198,13 +198,7 @@ class AdaptPC:
         # if CPU==AMD GPU can't be Integrated
         # if task==(ML|Gaming) require GPU
 
-        # TODO: Remove this. Temporary code to force the HDD+SDD must be greater than 0 rule
-        print('SSD:')
-        print(self.cur_symbolic_soln[MAP_SSD])
-        print('HDD:')
-        print(self.cur_symbolic_soln[MAP_HDD])
-        self.cur_symbolic_soln[MAP_SSD] = 0
-        self.cur_symbolic_soln[MAP_HDD] = 0
+        # TODO: Remove this block after rules are done. Insert temporary code to force various rules to fire here.
 
         # Need to customize the current solution according to a few rules. Let's go in order of
         # priorities
@@ -216,20 +210,23 @@ class AdaptPC:
             elif pri == 'RAM':
                 pass
             elif pri == 'SSD':
+                # Note: This rule is tied to the HDD rule. Whichever one has higher priority will fire first,
+                #       giving a small SSD if this fires first
                 if self.cur_symbolic_soln[MAP_SSD] + self.cur_symbolic_soln[MAP_HDD] == 0:
-                    #self.cur_numeric_soln[MAP_SSD] = self.ssd_table['Capacity'].iloc[0]
-                    print(self.ssd_table)
-                    print(self.ssd_table['Capacity'].iloc[0])
                     # Pick the first one that's non-zero
                     desired_ssd_size = self.ssd_table['Capacity'].iloc[1]
-                    print(desired_ssd_size)
                     desired_ssd_size=self.mappers[MAP_SSD].scaler['scaler'].inverse_transform(np.array(desired_ssd_size).reshape(-1,1))[0,0]
-                    print(desired_ssd_size)
                     desired_ssd_size = np.power(2, desired_ssd_size) - 1
-                    print(desired_ssd_size)
                     self.cur_symbolic_soln[MAP_SSD] = desired_ssd_size
             elif pri == 'HDD':
-                pass
+                # Note: This rule is tied to the SSD rule. Whichever one has higher priority will fire first,
+                #       giving a small HDD if this fires first
+                if self.cur_symbolic_soln[MAP_SSD] + self.cur_symbolic_soln[MAP_HDD] == 0:
+                    # Pick the first one that's non-zero
+                    desired_hdd_size = self.hdd_table['Capacity'].iloc[1]
+                    desired_hdd_size=self.mappers[MAP_HDD].scaler['scaler'].inverse_transform(np.array(desired_hdd_size).reshape(-1,1))[0,0]
+                    desired_hdd_size = np.power(2, desired_hdd_size) - 1
+                    self.cur_symbolic_soln[MAP_HDD] = desired_hdd_size
             elif pri == 'Budget':
                 pass
 
