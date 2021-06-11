@@ -191,7 +191,16 @@ class AdaptPC:
 
         reuse_logger.debug('applying rules...')
 
-        # TODO: Remove this block after rules are done. Insert temporary code to force various rules to fire here.
+        # Add simple, fixed rules here
+
+        # Add/remove optical drive if required. If no constraint, it's a don't-care, so leave as default.
+        if self.user_request.constraints.optical_drive == 'yes':
+            self.cur_symbolic_soln[MAP_OPT] = 1
+            self._sync_numeric_symbolic()
+        elif self.user_request.constraints.optical_drive == 'no':
+            self.cur_symbolic_soln[MAP_OPT] = 0
+            self._sync_numeric_symbolic()
+
 
         # There are two passes through the priorities:
         # First pass: Goes in priority order and is simply to address some fundamental storage requirements.

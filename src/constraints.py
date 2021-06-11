@@ -11,6 +11,7 @@ class Constraints:
         self.gpu_brand = None
         self.min_ram = None
         self.max_budget = None
+        self.optical_drive = None
 
         # Potential for Future: If we want to specify specific CPU/GPU
         # self.cpu=None
@@ -38,6 +39,11 @@ class Constraints:
                     self.max_budget = budget
                 else:
                     print('Error: invalid Maximum Budget (' + str(constraint_dict[k]) + ')')
+            elif k == 'optical_drive':
+                if constraint_dict[k] in ['yes', 'no']:
+                    self.optical_drive = constraint_dict[k]
+                else:
+                    print('Error: invalid Optical Drive option(' + str(constraint_dict[k]) + ')')
             else:
                 print('Error: did not understand key (' + k + ')')
 
@@ -50,22 +56,25 @@ class Constraints:
 class TestConstraints(unittest.TestCase):
     def test_constraints_good(self):
         constraints1 = {'cpu_brand': 'Intel', 'gpu_brand': 'PreferNVIDIA',
-                        'min_ram': '16', 'max_budget': '1500'}
+                        'min_ram': '16', 'max_budget': '1500', 'optical_drive': 'yes'}
         uut = Constraints(constraints1)
         self.assertEqual(uut.cpu_brand, 'Intel')
         self.assertEqual(uut.gpu_brand, 'PreferNVIDIA')
         self.assertEqual(uut.min_ram, 16)
         self.assertEqual(uut.max_budget, 1500)
+        self.assertEqual(uut.optical_drive, 'yes')
 
     def test_constraints_bad(self):
         print('\nExpect to see invalid results in this test.')
         constraints2 = {'cpu_brand': 'INTEL', 'gpu_brand': 'RadeonXYZ',
-                        'min_ram': '7', 'max_budget': '-5'}
+                        'min_ram': '7', 'max_budget': '-5',
+                        'optical_drive': 'uhhh... what?'}
         uut = Constraints(constraints2)
         self.assertEqual(uut.cpu_brand, None)
         self.assertEqual(uut.gpu_brand, None)
         self.assertEqual(uut.min_ram, None)
         self.assertEqual(uut.max_budget, None)
+        self.assertEqual(uut.optical_drive, None)
 
 
 if __name__ == "__main__":
