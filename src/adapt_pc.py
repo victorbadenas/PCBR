@@ -191,9 +191,6 @@ class AdaptPC:
 
         reuse_logger.debug('applying rules...')
 
-        # if CPU==AMD GPU can't be Integrated
-        # if task==(ML|Gaming) require GPU
-
         # TODO: Remove this block after rules are done. Insert temporary code to force various rules to fire here.
 
         # There are two passes through the priorities:
@@ -243,8 +240,47 @@ class AdaptPC:
         # Second pass: in reverse-priority order
         for pri in self.priorities[::-1]:
             if pri == 'CPU':
-                pass
+                # If the current CPU isn't on the preferred list (created by constraints), try to pick one that is
+                if not any(self.cpu_table['CPU Name']==self.cur_symbolic_soln[MAP_CPU]):
+                    cpu_found = False
+                    reuse_logger.debug('CPU not on preferred list. Replacing...')
+                    candidate_cpus = self.cpu_table[self.cpu_table['CPU Mark'] >= self.cur_numeric_soln[MAP_CPU]]
+                    if not candidate_cpus.empty:
+                        cheapest = candidate_cpus['MSRP'].idxmin()
+                        # Update it with cheapest equivalent/better CPU
+                        self.cur_symbolic_soln[MAP_CPU] = candidate_cpus.loc[cheapest]['CPU Name']
+                        cpu_found = True
+
+                    # Check alternate list, if required
+                    if not cpu_found:
+                        reuse_logger.debug('No suitable CPU in preferred list. Checking alternate list...')
+                        candidate_cpus = self.cpu_table_alt[self.cpu_table_alt['CPU Mark'] >= self.cur_numeric_soln[MAP_CPU]]
+                        if not candidate_cpus.empty:
+                            cheapest = candidate_cpus['MSRP'].idxmin()
+                            # Update it with cheapest equivalent/better CPU
+                            self.cur_symbolic_soln[MAP_CPU] = candidate_cpus.loc[cheapest]['CPU Name']
             elif pri == 'GPU':
+                print(self.gpu_table)
+                print(self.mappers[MAP_GPU].data)
+                # If the current GPU isn't on the preferred list (created by constraints), try to pick one that is
+                if not any(self.gpu_table['GPU Name']==self.cur_symbolic_soln[MAP_GPU]):
+                    gpu_found = False
+                    reuse_logger.debug('GPU not on preferred list. Replacing...')
+                    candidate_gpus = self.gpu_table[self.gpu_table['Benchmark'] >= self.cur_numeric_soln[MAP_GPU]]
+                    if not candidate_gpus.empty:
+                        cheapest = candidate_gpus['MSRP'].idxmin()
+                        # Update it with cheapest equivalent/better GPU
+                        self.cur_symbolic_soln[MAP_GPU] = candidate_gpus.loc[cheapest]['GPU Name']
+                        gpu_found = True
+
+                    # Check alternate list, if required
+                    if not gpu_found:
+                        reuse_logger.debug('No suitable GPU in preferred list. Checking alternate list...')
+                        candidate_gpus = self.gpu_table_alt[self.gpu_table_alt['Benchmark'] >= self.cur_numeric_soln[MAP_GPU]]
+                        if not candidate_gpus.empty:
+                            cheapest = candidate_gpus['MSRP'].idxmin()
+                            # Update it with cheapest equivalent/better GPU
+                            self.cur_symbolic_soln[MAP_GPU] = candidate_gpus.loc[cheapest]['GPU Name']
                 pass
             elif pri == 'RAM':
                 pass
@@ -276,6 +312,9 @@ class AdaptPC:
         reuse_logger.debug('confiriming constraints...')
         # If any constraints are unmet, customize the solution to meet them, taking the relative
         # importance user preferences into account (likely just budget/performance/multitasking now)
+
+        # if CPU==AMD GPU can't be Integrated
+
         return
 
     def _check_optimizations(self, solution):
@@ -351,3 +390,15 @@ class AdaptPC:
             # Note: No transformations required for optical drive or price
 
             return numeric
+
+    def _get_cpu_brand(self, cpu):
+        cpu_table = self.mappers[MAP_CPU].data
+        entry = cpu_table[cpu_table['CPU Name']==cpu]
+        brand = entry['Manufacturer'].iloc[0]
+        return brand
+
+    def _get_gpu_brand(self, gpu):
+        gpu_table = self.mappers[MAP_GPU].data
+        entry = gpu_table[gpu_table['GPU Name']==gpu]
+        brand = entry['Manufacturer'].iloc[0]
+        return brand
