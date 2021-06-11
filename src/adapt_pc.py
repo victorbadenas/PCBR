@@ -196,8 +196,12 @@ class AdaptPC:
 
         # TODO: Remove this block after rules are done. Insert temporary code to force various rules to fire here.
 
-        # Need to customize the current solution according to a few rules. Let's go in order of
-        # priorities
+        # There are two passes through the priorities:
+        # First pass: Goes in priority order and is simply to address some fundamental storage requirements.
+        # Second pass: Goes in reverse-priority order, which allows the more important rules to be processed
+        #              last and override less-important items.
+
+        # First pass: in priority order
         for pri in self.priorities:
             if pri == 'CPU':
                 pass
@@ -234,14 +238,39 @@ class AdaptPC:
                 pass
 
             # Sync numeric and symbolic solutions each pass
-            additional_info=[]
-            self.cur_numeric_soln = self._map_to_numeric(self.cur_symbolic_soln, additional_info=additional_info)
-            self.cur_addl_info = additional_info
-            self.cur_symbolic_soln = self._map_to_closest(self.cur_numeric_soln)
+            self._sync_numeric_symbolic()
 
+        # Second pass: in reverse-priority order
+        for pri in self.priorities[::-1]:
+            if pri == 'CPU':
+                pass
+            elif pri == 'GPU':
+                pass
+            elif pri == 'RAM':
+                pass
+            elif pri == 'SSD':
+                pass
+            elif pri == 'HDD':
+                pass
+            elif pri == 'Budget':
+                pass
 
+            # Sync numeric and symbolic solutions each pass
+            self._sync_numeric_symbolic()
 
         return
+
+    def _sync_numeric_symbolic(self):
+        # IMPORTANT Note: This function assumes the input is in the symbolic solution and will replace the
+        #                 numeric one. It has to do an extra copy back to numeric because the price is
+        #                 updated on the numeric->symbolic conversion.
+        additional_info=[]
+        self.cur_numeric_soln = self._map_to_numeric(self.cur_symbolic_soln, additional_info=additional_info)
+        self.cur_addl_info = additional_info
+        self.cur_symbolic_soln = self._map_to_closest(self.cur_numeric_soln)
+        additional_info=[]
+        self.cur_numeric_soln = self._map_to_numeric(self.cur_symbolic_soln, additional_info=additional_info)
+        self.cur_addl_info = additional_info
 
     def _confirm_constraints(self):
         reuse_logger.debug('confiriming constraints...')
