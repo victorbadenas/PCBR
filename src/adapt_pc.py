@@ -201,7 +201,6 @@ class AdaptPC:
             self.cur_symbolic_soln[MAP_OPT] = 0
             self._sync_numeric_symbolic()
 
-
         # There are two passes through the priorities:
         # First pass: Goes in priority order and is simply to address some fundamental storage requirements.
         # Second pass: Goes in reverse-priority order, which allows the more important rules to be processed
@@ -320,10 +319,19 @@ class AdaptPC:
 
     def _confirm_constraints(self):
         reuse_logger.debug('confiriming constraints...')
+
+        # If CPU is AMD, need a GPU so let's add the most basic one if none is present
+        if self._get_cpu_brand(self.cur_symbolic_soln[MAP_CPU]) == 'AMD' and \
+           self._get_gpu_brand(self.cur_symbolic_soln[MAP_GPU]) == 'Intel':
+            reuse_logger.debug('AMD processor requires CPU. Adding basic GPU.')
+            gpu_table=self.mappers[MAP_GPU].data
+            gpu_table=gpu_table[gpu_table['GPU Name']!='Integrated']
+            cheapest = gpu_table['MSRP'].idxmin()
+            self.cur_symbolic_soln[MAP_GPU] = gpu_table.loc[cheapest]['GPU Name']
+            self._sync_numeric_symbolic()
+
         # If any constraints are unmet, customize the solution to meet them, taking the relative
         # importance user preferences into account (likely just budget/performance/multitasking now)
-
-        # if CPU==AMD GPU can't be Integrated
 
         return
 
