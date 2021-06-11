@@ -415,6 +415,8 @@ if __name__ == '__main__':
             pcbr.retain(proposed_solution, revision_result)
 
         # compute ending time and print it, move onto next item
+        # TODO: Move this or split it into two parts because there's an interactive component
+        #       during the revision part
         en = time.time() - st
         pcbr_logger.debug(f'time for processing an instance {en:.2f}s')
 

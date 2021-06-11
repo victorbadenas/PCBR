@@ -103,6 +103,11 @@ class AdaptPC:
         # 2. Filter out solutions that would be forbidden by hardware compatibility/common sense
         #    (These are simple, so hand-crafted rules)
         # 3. If any constraints are unmet, optimize according budget/performance/multitasking importance
+        #
+        # This approach is very simple, but far from optimal. It seems to work well enough for CBR, particularly
+        # since it is expected that there is a human expert in the loop. However, future implementations may
+        # want to consider multivariate optimization approaches based on heuristics (like a beam search) or
+        # even evolutionary algorithms to search for an optimal value
         self._create_tables()
 
         self._apply_rules()
@@ -332,12 +337,162 @@ class AdaptPC:
 
         # If any constraints are unmet, customize the solution to meet them, taking the relative
         # importance user preferences into account (likely just budget/performance/multitasking now)
+        # Currently, budget is the only one that could really be broken.
+        constraints_check = self.user_request.constraints.ok(self.cur_symbolic_soln,
+                self._get_cpu_brand(self.cur_symbolic_soln[MAP_CPU]),
+                self._get_gpu_brand(self.cur_symbolic_soln[MAP_GPU]))
 
-        return
+        # Handle the failed constraints, one by one
 
-    def _check_optimizations(self, solution):
-        reuse_logger.debug('checking for additional optimizations...')
-        return
+        # Optical drive and RAM should have already been fixed earlier in the process. If they're
+        # wrong now, something's wrong with our code, so assert
+        if constraints_check[4] == False:
+            reuse_logger.warn('Optical drive constraint error.')
+            assert(1==0)
+        if constraints_check[2] == False:
+            reuse_logger.warn('RAM constraint error.')
+            assert(1==0)
+
+        # I also think that CPU and GPU brand should be correct since we haven't taken price into consideration
+        # at any point up until now. Let's just print a warning if this isn't true so we can know about it
+        # and see if we need to add anything here. These aren't severe enough to warrant asserting.
+        if constraints_check[0] == False: # CPU Brand
+            reuse_logger.warn('CPU Brand constraint error.')
+        if constraints_check[1] == False: # GPU Brand
+            reuse_logger.warn('GPU Brand constraint error.')
+
+        # Now we're left with only budget
+        # Let's figure out whether performance or budget is more important and optimize components accordingly
+        # Lower index is higher priority
+        cpuidx=self.priorities.index('CPU')
+        gpuidx=self.priorities.index('GPU')
+        budgetidx=self.priorities.index('Budget')
+
+        if constraints_check[3] == False:
+            self._optimize_price(cpuidx, gpuidx, budgetidx)
+
+        # This may not be optimal, but it's as good as we're going to get. Leave if up to the expert to
+        # decide in the Revision step if it's good enough or not.
+
+    def _optimize_price(self,cpuidx,gpuidx,budgetidx):
+            budget=self.user_request.constraints.max_budget
+            price=self.cur_symbolic_soln[6]
+            cpu_price = self._get_cpu_price(self.cur_symbolic_soln[MAP_CPU])
+            gpu_price = self._get_gpu_price(self.cur_symbolic_soln[MAP_GPU])
+            base_price = price - cpu_price - gpu_price
+            cpu_gpu_budget = budget - base_price
+            reuse_logger.debug(f'Total Price: {price} Budget: {budget}')
+            reuse_logger.debug(f'CPU Price: {cpu_price}')
+            reuse_logger.debug(f'GPU Price: {gpu_price}')
+            reuse_logger.debug(f'Base price: {base_price} CPU/GPU budget: {cpu_gpu_budget}')
+
+            # Only use the same brand of CPU
+            cpu_table = self.mappers[MAP_CPU].data
+            cpu_brand = self._get_cpu_brand(self.cur_symbolic_soln[MAP_CPU])
+            cpu_table=cpu_table[cpu_table['Manufacturer']==cpu_brand]
+            cpu_table=cpu_table[cpu_table['MSRP']<=cpu_gpu_budget]
+
+            # Keep same brand of GPU
+            gpu_table = self.mappers[MAP_GPU].data
+            gpu_brand = self._get_gpu_brand(self.cur_symbolic_soln[MAP_GPU])
+            gpu_table=gpu_table[gpu_table['Manufacturer']==gpu_brand]
+            gpu_table=gpu_table[gpu_table['MSRP']<=cpu_gpu_budget]
+
+            new_cpu = None
+            new_gpu = None
+
+
+            if cpu_table.empty:
+                if budgetidx < gpuidx:
+                    # Try to find a cheaper GPU but maintain CPU (since there aren't any viable options)
+                    new_gpu = self._find_cheaper_gpu(gpu_table, cpu_gpu_budget, cpu_price)
+            elif gpu_table.empty:
+                if budgetidx < cpuidx:
+                    # Try to find a cheaper CPU but maintain GPU (since there aren't any viable options)
+                    new_cpu = self._find_cheaper_cpu(cpu_table, cpu_gpu_budget, gpu_price)
+            else:
+                if budgetidx < cpuidx < gpuidx:
+                    # If budget is the most important, let's get the price down
+                    # CPU more important than GPU
+                    new_cpu, new_gpu = self._find_cheaper_cpu_gpu(cpu_table, gpu_table, cpu_gpu_budget, 'cpu')
+                elif budgetidx < gpuidx < cpuidx:
+                    # If budget is the most important, let's get the price down
+                    # GPU more important than CPU
+                    new_cpu, new_gpu = self._find_cheaper_cpu_gpu(cpu_table, gpu_table, cpu_gpu_budget, 'gpu')
+                elif cpuidx < budgetidx < gpuidx:
+                    # Try to find a cheaper GPU but maintain CPU
+                    new_gpu = self._find_cheaper_gpu(gpu_table, cpu_gpu_budget, cpu_price)
+                elif gpuidx < budgetidx < cpuidx:
+                    # Try to find a cheaper CPU but maintain GPU
+                    new_cpu = self._find_cheaper_cpu(cpu_table, cpu_gpu_budget, gpu_price)
+                elif budgetidx > cpuidx and budgetidx > gpuidx:
+                    # Performance is more important than budget so we're done
+                    pass
+
+            if new_cpu is not None:
+                self.cur_symbolic_soln[MAP_CPU] = new_cpu
+
+            if new_gpu is not None:
+                self.cur_symbolic_soln[MAP_GPU] = new_gpu
+
+            self._sync_numeric_symbolic()
+
+    def _find_cheaper_gpu(self, gpu_table, cpu_gpu_budget, cpu_price):
+        new_gpu = None
+        for index, row in gpu_table[['GPU Name', 'MSRP']].sort_values(by='MSRP', ascending=False).iterrows():
+            if row['MSRP'] + cpu_price <= cpu_gpu_budget:
+                new_gpu = row['GPU Name']
+                break
+
+        return new_gpu
+
+    def _find_cheaper_cpu(self, cpu_table, cpu_gpu_budget, gpu_price):
+        new_cpu = None
+        for index, row in cpu_table[['CPU Name', 'MSRP']].sort_values(by='MSRP', ascending=False).iterrows():
+            if row['MSRP'] + gpu_price <= cpu_gpu_budget:
+                new_cpu = row['CPU Name']
+                break
+
+        return new_cpu
+
+    def _find_cheaper_cpu_gpu(self, cpu_table, gpu_table, cpu_gpu_budget, priority):
+        new_cpu = None
+        new_gpu = None
+        # Need to signal outer loop that it can stop searching
+        found_solution = False
+
+        if priority == 'cpu':
+            # Start from most expensive CPU in outer loop, try all GPUs, then decrease CPU
+            for c_index, c_row in cpu_table[['CPU Name', 'MSRP']].sort_values(by='MSRP', ascending=False).iterrows():
+                cpu_price = c_row['MSRP']
+                for g_index, g_row in gpu_table[['GPU Name', 'MSRP']].sort_values(by='MSRP', ascending=False).iterrows():
+                    gpu_price = g_row['MSRP']
+
+                    if cpu_price + gpu_price <= cpu_gpu_budget:
+                        new_cpu = c_row['CPU Name']
+                        new_gpu = g_row['GPU Name']
+                        found_solution = True
+                        break  # Inner loop
+
+                if found_solution:
+                    break # Outer loop
+        else:
+            # Start from most expensive GPU in outer loop, try all CPUs, then decrease CPU
+            for g_index, g_row in gpu_table[['GPU Name', 'MSRP']].sort_values(by='MSRP', ascending=False).iterrows():
+                gpu_price = g_row['MSRP']
+                for c_index, c_row in cpu_table[['CPU Name', 'MSRP']].sort_values(by='MSRP', ascending=False).iterrows():
+                    cpu_price = c_row['MSRP']
+
+                    if cpu_price + gpu_price <= cpu_gpu_budget:
+                        new_cpu = c_row['CPU Name']
+                        new_gpu = g_row['GPU Name']
+                        found_solution = True
+                        break  # Inner loop
+
+                if found_solution:
+                    break # Outer loop
+
+        return new_cpu, new_gpu
 
     def _map_to_closest(self, adapted_solution):
             # Mapping to closest real component.
@@ -420,3 +575,15 @@ class AdaptPC:
         entry = gpu_table[gpu_table['GPU Name']==gpu]
         brand = entry['Manufacturer'].iloc[0]
         return brand
+
+    def _get_cpu_price(self, cpu):
+        cpu_table = self.mappers[MAP_CPU].data
+        entry = cpu_table[cpu_table['CPU Name']==cpu]
+        price = entry['MSRP'].iloc[0]
+        return price
+
+    def _get_gpu_price(self, gpu):
+        gpu_table = self.mappers[MAP_GPU].data
+        entry = gpu_table[gpu_table['GPU Name']==gpu]
+        price = entry['MSRP'].iloc[0]
+        return price

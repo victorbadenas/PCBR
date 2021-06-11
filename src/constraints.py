@@ -47,10 +47,47 @@ class Constraints:
             else:
                 print('Error: did not understand key (' + k + ')')
 
-    def ok(self, configuration, non_compliant=None):
-        # Check the configuration passed in and return True if all constraints are met
-        # If non_compliant is not None (should be an empty list), pass back which constraints are not met
-        return True
+    def ok(self, configuration, selected_cpu_brand, selected_gpu_brand):
+        # Check the configuration passed in and return a list of booleans for whether each constraint
+        # is met or not. Order: CPU Brand, GPU Brand, RAM, Budget, Optical Drive
+        # CPU/GPU brands are passed in along with the configuration since this class doesn't have access
+        # to the appropriate lookup tables
+
+        cpu_ok = True
+        gpu_ok = True
+        ram_ok = True
+        budget_ok = True
+        optical_ok = True
+
+        if self.cpu_brand is not None:
+            # Only consider unmet if it is as "MUST" (not a prefer) and doesn't match
+            if self.cpu_brand == 'Intel' and selected_cpu_brand != 'Intel':
+                cpu_ok = False
+            if self.cpu_brand == 'AMD' and selected_cpu_brand != 'AMD':
+                cpu_ok = False
+
+        if self.gpu_brand is not None:
+            # Only consider unmet if it is as "MUST" (not a prefer) and doesn't match
+            if self.gpu_brand == 'NVIDIA' and selected_gpu_brand != 'NVIDIA':
+                gpu_ok = False
+            if self.gpu_brand == 'AMD' and selected_gpu_brand != 'AMD':
+                gpu_ok = False
+
+        if self.min_ram is not None:
+            if configuration[1] < self.min_ram:
+                ram_ok = False
+
+        if self.max_budget is not None:
+            if configuration[6] > self.max_budget:
+                budget_ok = False
+
+        if self.optical_drive is not None:
+            if self.optical_drive == 'yes' and configuration[5] == 0:
+                optical_ok = False
+            elif self.optical_drive == 'no' and configuration[5] == 1:
+                optical_ok = False
+
+        return [ cpu_ok, gpu_ok, ram_ok, budget_ok, optical_ok ]
 
 
 class TestConstraints(unittest.TestCase):
