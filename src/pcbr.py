@@ -471,13 +471,14 @@ if __name__ == '__main__':
 
         proposed_solution = pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances, user_request=user_request)
 
+        proc_time = time.time()
         revision_result = pcbr.revise(proposed_solution)
         if revision_result is not None:  # If the expert has not dropped the solution
             pcbr.retain(revision_result, n_neighbors=n_neighbors)
 
-        # compute ending time and print it, move onto next item
-        en = time.time() - st
-        pcbr_logger.debug(f'time for processing an instance {en:.2f}s')
+        rev_ret_time = time.time()
 
-    # TODO: Should we write new case base to file and exit or just keep looping?
+        # compute ending time and print it, move onto next item
+        pcbr_logger.info(f'time for processing an instance {proc_time - st:.2f}s, time for revision and {rev_ret_time - st:.2f}s')
+
     # Kevin: I think that we talked yesterday about just keeping the loop.
