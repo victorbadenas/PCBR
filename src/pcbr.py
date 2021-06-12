@@ -12,7 +12,7 @@ from data.mapper import Mapper
 from utils.io import read_file
 from utils.typing import represents_int, str_to_dict
 from neighbors.knn import KNeighborsClassifier
-from sklearn.neighbors import NearestNeighbors
+from neighbors.nn import NearestNeighbors as OurNearestNeighbors
 from adapt_pc import AdaptPC
 from user_request import UserRequest
 from matplotlib import pyplot as plt
@@ -395,8 +395,9 @@ class PCBR:
 
         target = self.target_attributes.to_numpy()
         numeric_revised_solution = self.adapt_pc.from_pc_to_numeric(revised_solution)
-        knn = NearestNeighbors(n_neighbors=n_neighbors).fit(target)
-        neigh = knn.kneighbors_graph(target, mode="distance")
+
+        knn = OurNearestNeighbors(n_neighbors=n_neighbors).fit(target)
+        neigh = knn.kneighbors_graph(target)
         prediction = knn.kneighbors([numeric_revised_solution])
 
         stats = self.extract_statistics(neigh, n_neighbors)
