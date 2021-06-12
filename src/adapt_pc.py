@@ -83,7 +83,7 @@ class AdaptPC:
         self.cur_symbolic_soln = self._map_to_closest(adapted_solution)
         reuse_logger.debug('Configuration after weighted adaptation: ' + str(self.cur_symbolic_soln))
         additional_info=[]
-        self.cur_numeric_soln = self._map_to_numeric(self.cur_symbolic_soln, additional_info=additional_info)
+        self.cur_numeric_soln = self.map_to_numeric(self.cur_symbolic_soln, additional_info=additional_info)
         self.cur_addl_info = additional_info
 
         reuse_logger.debug('Numeric representation (closest): ' + str(self.cur_numeric_soln))
@@ -224,8 +224,7 @@ class AdaptPC:
                                                             to_col=target_columns[idx])[0]
                 solution_price += self.mappers[idx].transform(np.array(tmp_adapted_solution[idx]),
                                                          from_col=target_columns[idx],
-                                                         to_col=price_columns[idx],
-                )[0]
+                                                         to_col=price_columns[idx],)[0]
             tmp_adapted_solution[-1] = np.round(solution_price, 2)
 
             # Transformation of Log2 components.
@@ -239,7 +238,7 @@ class AdaptPC:
                 )
             return tmp_adapted_solution
 
-    def _map_to_numeric(self, symbolic, additional_info=None):
+    def map_to_numeric(self, symbolic, additional_info=None):
             # Copy data so we don't destroy it
             numeric = symbolic.copy()
 
@@ -274,3 +273,8 @@ class AdaptPC:
             # Note: No transformations required for optical drive or price
 
             return numeric
+
+    def from_pc_to_numeric(self, revised_solution):
+        numeric_revised_solution = self.map_to_numeric(revised_solution)
+        numeric_revised_solution[-1] = self.scalers[3].transform([[numeric_revised_solution[-1]]])[0][0]
+        return numeric_revised_solution
