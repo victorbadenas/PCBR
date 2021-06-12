@@ -315,11 +315,11 @@ class AdaptPC:
         #                 numeric one. It has to do an extra copy back to numeric because the price is
         #                 updated on the numeric->symbolic conversion.
         additional_info=[]
-        self.cur_numeric_soln = self._map_to_numeric(self.cur_symbolic_soln, additional_info=additional_info)
+        self.cur_numeric_soln = self.map_to_numeric(self.cur_symbolic_soln, additional_info=additional_info)
         self.cur_addl_info = additional_info
         self.cur_symbolic_soln = self._map_to_closest(self.cur_numeric_soln)
         additional_info=[]
-        self.cur_numeric_soln = self._map_to_numeric(self.cur_symbolic_soln, additional_info=additional_info)
+        self.cur_numeric_soln = self.map_to_numeric(self.cur_symbolic_soln, additional_info=additional_info)
         self.cur_addl_info = additional_info
 
     def _confirm_constraints(self):
