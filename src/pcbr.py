@@ -38,17 +38,17 @@ def setup_logging():
     retain_logger.setLevel(logging.INFO)
 
 class PCBR:
-    def __init__(self, cbl_path='../data/pc_specs.csv',
-                       cpu_path='../data/cpu_table.csv',
-                       gpu_path='../data/gpu_table.csv',
-                       ram_path='../data/ram_table.csv',
-                       ssd_path='../data/ssd_table.csv',
-                       hdd_path='../data/hdd_table.csv',
-                       opt_drive_path='../data/optical_drive_table.csv',
-                       feature_scalers_meta='../data/feature_scalers.json',
-                       feature_relevance_path='../data/feature_relevance.csv',
-                       output_retain_path='../data/retained',
-                       output_saved_model_path='../data/pcbr_stored'):
+    def __init__(self, cbl_path: str ='../data/pc_specs.csv',
+                       cpu_path: str ='../data/cpu_table.csv',
+                       gpu_path: str ='../data/gpu_table.csv',
+                       ram_path: str ='../data/ram_table.csv',
+                       ssd_path: str ='../data/ssd_table.csv',
+                       hdd_path: str ='../data/hdd_table.csv',
+                       opt_drive_path: str ='../data/optical_drive_table.csv',
+                       feature_scalers_meta: str ='../data/feature_scalers.json',
+                       feature_relevance_path: str ='../data/feature_relevance.csv',
+                       output_retain_path: str ='../data/retained',
+                       output_saved_model_path: str ='../data/pcbr_stored'):
 
         pcbr_logger.info('Initializing...')
         # 
@@ -67,6 +67,9 @@ class PCBR:
         self.target_attributes = case_library[case_library.columns[:7]]
         self.source_attributes = case_library[case_library.columns[7:]]
 
+        date_time = datetime.now()
+        self.run_timestamp = date_time.strftime("%Y-%m-%d-%H-%M-%S")
+
         # save table's csv paths
         self.table_paths = {
             "cbl": cbl_path,
@@ -78,6 +81,9 @@ class PCBR:
             "opt_drive": opt_drive_path,
             "feat_scalers": feature_scalers_meta,
             "feat_relevance": feature_relevance_path,
+            "retain_source": f"{output_retain_path}/pcbr_source_{self.run_timestamp}.csv",
+            "retain_target": f"{output_retain_path}/pcbr_target_{self.run_timestamp}.csv",
+            "output_saved_model": f"{output_saved_model_path}/pcbr_cbl_{self.run_timestamp}.csv"
         }
 
         # read mappers
@@ -102,13 +108,7 @@ class PCBR:
         # initialize the adapt_pc object
         self.adapt_pc = AdaptPC(self)
         self.number_of_base_instances = self.target_attributes.shape[0]
-
-        date_time = datetime.now()
-        self.run_timestamp = date_time.strftime("%Y-%m-%d-%H-%M-%S")
-        self.cbl_path = cbl_path
-        self.retain_source_path = f"{output_retain_path}/pcbr_source_{self.run_timestamp}.csv"
-        self.retain_target_path = f"{output_retain_path}/pcbr_target_{self.run_timestamp}.csv"
-        self.output_saved_model_path = f"{output_saved_model_path}/pcbr_cbl_{self.run_timestamp}.csv"
+        # input data
         self.input_profile = None
         self.input_pref = None
         self.input_constraints = None
@@ -472,8 +472,8 @@ class PCBR:
         return stats
 
     def save_new_solution(self, revised_solution):
-        self.update_dataset(self.input_profile, self.source_attributes.columns.tolist(), self.retain_source_path)
-        self.update_dataset(revised_solution, self.target_attributes.columns.tolist(), self.retain_target_path)
+        self.update_dataset(self.input_profile, self.source_attributes.columns.tolist(), self.table_paths['retain_source'])
+        self.update_dataset(revised_solution, self.target_attributes.columns.tolist(), self.table_paths['retain_target'])
 
     def update_dataset(self, revised_solution, columns, path):
         solution = pd.DataFrame([revised_solution], columns=columns, index=None)
@@ -485,21 +485,21 @@ class PCBR:
         retained.to_csv(path, index=False)
 
     def save_model(self):
-        if os.path.isfile(self.retain_source_path) and os.path.isfile(self.retain_target_path):
-            source = pd.read_csv(self.retain_source_path, index_col=None)
-            target = pd.read_csv(self.retain_target_path, index_col=None)
+        if os.path.isfile(self.table_paths['retain_source']) and os.path.isfile(self.table_paths['retain_target']):
+            source = pd.read_csv(self.table_paths['retain_source'], index_col=None)
+            target = pd.read_csv(self.table_paths['retain_target'], index_col=None)
             retained_instances = pd.concat([target, source], axis=1)
             dropped_column = 'Comments (don\'t use commas)'
             retained_instances[dropped_column] = self.new_instance_marker
 
-            pc_specs = pd.read_csv(self.cbl_path, index_col=None)
+            pc_specs = pd.read_csv(self.table_paths['cbl'], index_col=None)
             pc_specs_max_id = pc_specs['ID'].max()+1
             retained_instances.insert(0, 'ID', list(range(pc_specs_max_id, pc_specs_max_id + target.shape[0])))
             pc_specs = pc_specs.append(retained_instances, ignore_index=True)
-            pc_specs.to_csv(self.output_saved_model_path, index=False)
-            pcbr_logger.info(f'Model saved at: {self.output_saved_model_path}')
-            os.remove(self.retain_source_path)
-            os.remove(self.retain_target_path)
+            pc_specs.to_csv(self.table_paths['output_saved_model'], index=False)
+            pcbr_logger.info(f"Model saved at: {self.table_paths['output_saved_model']}")
+            os.remove(self.table_paths['retain_source'])
+            os.remove(self.table_paths['retain_target'])
             pcbr_logger.info('Source and Target files removed!')
 
 
