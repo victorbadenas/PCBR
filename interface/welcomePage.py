@@ -41,7 +41,7 @@ def setup_logging():
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         self.Dialog = Dialog
-        self.Dialog.setObjectName("Dialog")
+        self.Dialog.setObjectName("Welcome")
         self.Dialog.resize(455, 341)
 
         #start button
@@ -94,7 +94,7 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        Dialog.setWindowTitle(_translate("Dialog", "Welcome"))
         self.startButton.setText(_translate("Dialog", "start"))
         self.label.setText(_translate("Dialog", "welcome to"))
         self.label_2.setText(_translate("Dialog", "PCBR"))

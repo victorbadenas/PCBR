@@ -16,19 +16,17 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from pcbr import PCBR
 from utils.typing import represents_float
 from user_request import UserRequest
+from multichoice import MultiChoiceDialog
 
 app_logger = logging.getLogger('app')
 pd.set_option('max_columns', None)
 pd.set_option('display.expand_frame_repr', False)
 
-
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(846, 668)
-
-        MainWindow.setWindowTitle("User Request")
-        self.center()
+        self.center(MainWindow)
 
         self.radio_groups = dict()
         self.radio_groups_values = dict()
@@ -633,13 +631,15 @@ class Ui_MainWindow(object):
             opt_drive_path="data/optical_drive_table.csv",
             feature_scalers_meta="data/feature_scalers.json",
             feature_relevance_path="data/feature_relevance.csv",
+            output_retain_path='data/retained',
+            output_saved_model_path='data/pcbr_stored'
         )
         app_logger.info(f'PCBR initialized')
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.pushButton.setText(_translate("MainWindow", "done"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "User Profile"))
+        self.pushButton.setText(_translate("MainWindow", "Done"))
         self.groupBox_5.setTitle(_translate("MainWindow", "How frequently do you replace your computer?"))
         self.radioButton_19.setText(_translate("MainWindow", "5-7 years"))
         self.radioButton_18.setText(_translate("MainWindow", "2-5 years"))
@@ -712,12 +712,11 @@ class Ui_MainWindow(object):
         self.label_16.setText(_translate("MainWindow", "Maximum budget"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Advanced"))
 
-    def center(self):
-        return
-        qr = self.frameGeometry()
-        cp = QDesktopWidget().availableGeometry().center()
-        qr.movecenter(cp)
-        self.move(qr.topLeft())
+    def center(self, MainWindow):
+        qr = MainWindow.frameGeometry()
+        cp = QtWidgets.QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        MainWindow.move(qr.topLeft())
 
     def check_all_correct(self):
         for rb_group in self.radio_groups.keys():
@@ -815,26 +814,115 @@ class Ui_MainWindow(object):
         proc_time = time.time()
         rev_ret_time = time.time()
 
-        self.revise(proposed_solution)
+        revision_result = self.revise(proposed_solution)
+        # if revision_result is not None:  # If the expert has not dropped the solution
+        #     self.pcbr.retain(revision_result, user_request.profile, n_neighbors=3)
 
         app_logger.info(f'time for processing an instance {proc_time - st:.2f}s, time for revision and {rev_ret_time - st:.2f}s')
 
-    def revise(self, proposed_solution=None):
-        assert proposed_solution is not None
+    def revise(self, proposed_solution):
         proposed_solutions = [proposed_solution]
         index = ['Proposed solution']
         columns = self.pcbr.target_attributes.columns.tolist()
         satisfactory = self.print_solutions(proposed_solutions, columns, index)
-        app_logger.info(f'{satisfactory}')
+        app_logger.info(f'solution is satisfactory: {satisfactory}')
 
-    def print_solutions(self, proposed_solutions, columns, index):
+        if not satisfactory:
+            revise_result = self.revise_possibilities(proposed_solutions, columns)
+            if revise_result is not None:
+                index = ['Final revised solution']
+                app_logger.info(f'result revised')
+                self.print_solutions([revise_result], columns, index, text="Final Solution")
+        else:
+            revise_result = proposed_solution
+        return revise_result
+
+    def revise_possibilities(self, proposed_solutions, components):
+        want_to_modify = self.ask_binary_question(
+            'Would you like to change any components (y/n)? (n will drop the solution)'
+        )
+        if want_to_modify:
+            remaining_components = components[:-1]
+            index = ['Original solution']
+            satisfactory = False
+            while len(remaining_components) > 0 and not satisfactory:
+                selected_component_idx = self.ask_radio_options(remaining_components, title='Select one component type between the following ones:')
+                selected_component = remaining_components[selected_component_idx]
+                remaining_components.pop(selected_component_idx)
+                all_values = self.pcbr.extract_all_values_for_component(selected_component)
+                latest_solution = proposed_solutions[len(proposed_solutions) - 1]
+                latest_solution_price = proposed_solutions[len(proposed_solutions) - 1][-1]
+                component_id = components.index(selected_component)
+                latest_value = latest_solution[component_id]
+                all_values.remove(latest_value)
+                if len(all_values) > 0:
+                    selected_new_value = self.show_values_and_get_choice(selected_component, all_values)
+                    app_logger.info(f'Selected {selected_new_value}')
+                    difference = self.pcbr.calculate_price_difference(selected_component, latest_value, selected_new_value)
+                    latest_solution_price += difference
+                    new_solution = latest_solution.copy()
+                    new_solution[component_id] = selected_new_value
+                    new_solution[-1] = latest_solution_price
+                    proposed_solutions.append(new_solution)
+                else:
+                    # TODO: QMessageBox
+                    app_logger.info('Sorry but the chosen component has not valid alternatives!')
+                    app_logger.info('\nSelect one component number between the following ones:')
+            
+                index.append(len(index))
+                if len(remaining_components) > 0:
+                    satisfactory = not self.print_solutions(proposed_solutions, components, index, text="Would you like to change something more (y/n)?")
+                else:
+                    satisfactory = True
+            return self.ask_which_solution_is_final(proposed_solutions, components, index)
+        else:
+            app_logger.info('The proposed solution has been dropped!')
+            return None
+
+    def ask_which_solution_is_final(self, proposed_solutions, columns, index):
+        columns = list(columns)
         columns[-2] = "Optical Drive"
+
         dataframe = pd.DataFrame(proposed_solutions, columns=columns, index=index)
 
-        if len(index) == 1:
-            text = "The proposed solution is the following:"
-        else:
-            text = "The modified solutions are the following:"
+        qbox = QtWidgets.QMessageBox()
+        qbox.setFixedWidth(800)
+        qbox.setText("Final proposed solutions (showcase window, close to select)")
+        qbox.setFont(QtGui.QFont('Consolas', 9, QtGui.QFont.Monospace))
+        qbox.setInformativeText(dataframe.to_markdown())
+        qbox.setWindowTitle("Solutions")
+        qbox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        qbox.show()
+
+        return_value = self.ask_radio_options(index, title='Which option is final')
+        qbox.close()
+        if return_value is None:
+            self.Dialog.close()
+        return proposed_solutions[return_value]
+    
+    def show_values_and_get_choice(self, selected_component, all_values):
+        selected_component_idx = self.ask_radio_options(all_values, title=f'Select one {selected_component} type between the following ones:')
+        return all_values[selected_component_idx]
+
+    def ask_radio_options(self, options, title="", size=(322, 280)):
+        Dialog = QtWidgets.QDialog()
+        ui = MultiChoiceDialog()
+        ui.setupUi(Dialog, options=options, title=title, size=size)
+        Dialog.show()
+        Dialog.setModal(True)
+        Dialog.exec()
+        return ui.result
+
+    def print_solutions(self, proposed_solutions, columns, index, text=None):
+        columns = list(columns)
+        columns[-2] = "Optical Drive"
+        dataframe = pd.DataFrame(proposed_solutions, columns=columns, index=index)
+        
+        if text is None:
+            if len(index) == 1:
+                text = "The proposed solution is the following:"
+            else:
+                text = "The modified solutions are the following:"
 
         revise_qbox = QtWidgets.QMessageBox()
         revise_qbox.setFixedWidth(800)
@@ -844,13 +932,21 @@ class Ui_MainWindow(object):
         revise_qbox.setWindowTitle("Solutions")
         revise_qbox.setDetailedText(dataframe.to_markdown())
         revise_qbox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
-        revise_qbox.buttonClicked.connect(msgbtn)
 
         returnValue = revise_qbox.exec()
         return returnValue == QtWidgets.QMessageBox.Yes
 
-def msgbtn(i):
-   print("Button pressed is:", i.text())
+    def ask_binary_question(self, message):
+        qbox = QtWidgets.QMessageBox()
+        qbox.setText(message)
+        qbox.setFont(QtGui.QFont('Consolas', 9, QtGui.QFont.Monospace))
+        qbox.setWindowTitle("Question")
+        qbox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+
+        returnValue = qbox.exec()
+        return returnValue == QtWidgets.QMessageBox.Yes
+
+
 
 if __name__ == "__main__":
     import sys
