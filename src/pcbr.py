@@ -44,18 +44,18 @@ def save_pcbr():
 
 
 class PCBR:
-    def __init__(self, cbl_path='../data/pc_specs.csv',
-                       cpu_path='../data/cpu_table.csv',
-                       gpu_path='../data/gpu_table.csv',
-                       ram_path='../data/ram_table.csv',
-                       ssd_path='../data/ssd_table.csv',
-                       hdd_path='../data/hdd_table.csv',
-                       opt_drive_path='../data/optical_drive_table.csv',
-                       feature_scalers_meta='../data/feature_scalers.json',
-                       feature_relevance_path='../data/feature_relevance.csv'):
+    def __init__(self, cbl_path:str='../data/pc_specs.csv',
+                       cpu_path:str='../data/cpu_table.csv',
+                       gpu_path:str='../data/gpu_table.csv',
+                       ram_path:str='../data/ram_table.csv',
+                       ssd_path:str='../data/ssd_table.csv',
+                       hdd_path:str='../data/hdd_table.csv',
+                       opt_drive_path:str='../data/optical_drive_table.csv',
+                       feature_scalers_meta:str='../data/feature_scalers.json',
+                       feature_relevance_path:str='../data/feature_relevance.csv'):
 
         pcbr_logger.info('Initializing...')
-        # read mappers
+        # 
         # read case library
         case_library, self.transformations = read_initial_cbl(path=cbl_path, 
             cpu_path=cpu_path,
@@ -71,7 +71,20 @@ class PCBR:
         self.target_attributes = case_library[case_library.columns[:7]]
         self.source_attributes = case_library[case_library.columns[7:]]
 
-        # read component's tables
+        # save table's csv paths
+        self.table_paths = {
+            "cbl": cbl_path,
+            "cpu": cpu_path,
+            "gpu": gpu_path,
+            "ram": ram_path,
+            "ssd": ssd_path,
+            "hdd": hdd_path,
+            "opt_drive": opt_drive_path,
+            "feat_scalers": feature_scalers_meta,
+            "feat_relevance": feature_relevance_path,
+        }
+
+        # read mappers
         cpu_mapper = Mapper.from_csv(path=cpu_path, scaler_columns=['CPU Mark'],
                                      scaler=self.transformations['CPU'])
         gpu_mapper = Mapper.from_csv(path=gpu_path, scaler_columns=['Benchmark'],
@@ -335,12 +348,12 @@ class PCBR:
             return None
 
     def extract_all_values_for_component(self, selected_component):
-        components_map = {'CPU': ('../data/cpu_table.csv', 'CPU Name'),
-                 'RAM (GB)': ('../data/ram_table.csv', 'Capacity'),
-                 'SSD (GB)': ('../data/ssd_table.csv', 'Capacity'),
-                 'HDD (GB)': ('../data/hdd_table.csv', 'Capacity'),
-                 'GPU': ('../data/gpu_table.csv', 'GPU Name'),
-                 'Optical Drive (1 = DVD; 0 = None)': ('../data/optical_drive_table.csv', 'Boolean State')}
+        components_map = {'CPU': (self.table_paths['cpu'], 'CPU Name'),
+                 'RAM (GB)': (self.table_paths['ram'], 'Capacity'),
+                 'SSD (GB)': (self.table_paths['ssd'], 'Capacity'),
+                 'HDD (GB)': (self.table_paths['hdd'], 'Capacity'),
+                 'GPU': (self.table_paths['gpu'], 'GPU Name'),
+                 'Optical Drive (1 = DVD; 0 = None)': (self.table_paths['opt_drive'], 'Boolean State')}
 
         df = read_table(components_map[selected_component][0], index_col=None)
         return df[components_map[selected_component][1]].values.tolist()
@@ -359,12 +372,12 @@ class PCBR:
                 print(f'Invalid choice: {cli_input}')
 
     def calculate_price_difference(self, selected_component, latest_value, selected_new_value):
-        components_map = {'CPU': ('../data/cpu_table.csv', 'CPU Name', 'MSRP'),
-                 'RAM (GB)': ('../data/ram_table.csv', 'Capacity', 'Price'),
-                 'SSD (GB)': ('../data/ssd_table.csv', 'Capacity', 'Price'),
-                 'HDD (GB)': ('../data/hdd_table.csv', 'Capacity', 'Price'),
-                 'GPU': ('../data/gpu_table.csv', 'GPU Name', 'MSRP'),
-                 'Optical Drive (1 = DVD; 0 = None)': ('../data/optical_drive_table.csv', 'Boolean State', 'Price')}
+        components_map = {'CPU': (self.table_paths['cpu'], 'CPU Name', 'MSRP'),
+                 'RAM (GB)': (self.table_paths['ram'], 'Capacity', 'Price'),
+                 'SSD (GB)': (self.table_paths['ssd'], 'Capacity', 'Price'),
+                 'HDD (GB)': (self.table_paths['hdd'], 'Capacity', 'Price'),
+                 'GPU': (self.table_paths['gpu'], 'GPU Name', 'MSRP'),
+                 'Optical Drive (1 = DVD; 0 = None)': (self.table_paths['opt_drive'], 'Boolean State', 'Price')}
         df = read_table(components_map[selected_component][0], index_col=None)
         old_row = df.loc[df[components_map[selected_component][1]] == latest_value]
         new_row = df.loc[df[components_map[selected_component][1]] == selected_new_value]
