@@ -13,7 +13,7 @@ import logging
 
 sys.path.append('src')
 
-from mainWindow import Ui_MainWindow
+from mainWindow_comp import Ui_MainWindow
 
 pcbr_logger = logging.getLogger('pcbr')
 retrieve_logger = logging.getLogger('retrieve')
