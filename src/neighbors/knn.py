@@ -61,6 +61,13 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
         self.metric = metric
         self.method = method
         self._validateParameters()
+        self._reset()
+
+    def _reset(self):
+        self.trainX = None
+        self.trainTargets = None
+        self.w = None
+        self.fitted = False
 
     def _computeFeatureWeights(self):
         """computes the weight for each one of the features.
@@ -109,9 +116,11 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
             [KNeighborsClassifier]: [fitted classifier]
         """
         assert X.shape[0] >= self.k, f"Need a minimum of {self.k} points"
+        self._reset()
         self.trainX = self._validate_data(X)
         self.trainTargets = y.copy()
         self._computeFeatureWeights()
+        self.fitted = True
         return self
 
     def _predict(self, X):

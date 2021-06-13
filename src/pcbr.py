@@ -2,6 +2,7 @@ import os, sys, logging
 from collections.abc import Callable
 from typing import Union
 import numpy as np
+from datetime import datetime
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -11,8 +12,10 @@ from data.mapper import Mapper
 from utils.io import read_file
 from utils.typing import represents_int, str_to_dict
 from neighbors.knn import KNeighborsClassifier
+from neighbors.nn import NearestNeighbors as OurNearestNeighbors
 from adapt_pc import AdaptPC
 from user_request import UserRequest
+from matplotlib import pyplot as plt
 
 # Logger objects
 pcbr_logger = logging.getLogger('pcbr')
@@ -28,11 +31,16 @@ def setup_logging():
 
     # Choose the modules whose output you want to see here. INFO is a good default level, but DEBUG
     # may be useful during development of your module
-    pcbr_logger.setLevel(logging.DEBUG)
+    pcbr_logger.setLevel(logging.INFO)
     retrieve_logger.setLevel(logging.INFO)
-    reuse_logger.setLevel(logging.DEBUG)
+    reuse_logger.setLevel(logging.INFO)
     revise_logger.setLevel(logging.INFO)
     retain_logger.setLevel(logging.INFO)
+
+
+def save_pcbr():
+    # TODO save all source and target instances in what format?
+    pass
 
 
 class PCBR:
@@ -84,6 +92,10 @@ class PCBR:
 
         # initialize the adapt_pc object
         self.adapt_pc = AdaptPC(self)
+        date_time = datetime.now()
+        self.run_timestamp = date_time.strftime("%Y-%m-%d-%H-%M-%S")
+        self.number_of_base_instances = self.target_attributes.shape[0]
+
         pcbr_logger.info('Initialization complete!')
 
     def get_user_request(self, mock_file=None, mode='one_pass') -> UserRequest:
@@ -161,6 +173,7 @@ class PCBR:
     def get_user_input(input_message_string:str, expected_format:Callable, exit_str:str='exit') -> Union[str, None]:
         user_input_string = input(input_message_string).strip()
         if user_input_string == exit_str:
+            save_pcbr()
             return None
         while not expected_format(user_input_string):
             print('Wrong format...')
@@ -221,6 +234,10 @@ class PCBR:
     def revise(self, proposed_solution=None):
         assert proposed_solution is not None
 
+        print('\n***************************************\n')
+        print('\t\t\tEXPERT OPINION')
+        print('***************************************')
+
         proposed_solutions = [proposed_solution]
         index = ['Proposed solution']
         columns = self.target_attributes.columns.tolist()
@@ -228,13 +245,18 @@ class PCBR:
         satisfactory = self.ask_if('Is the latter proposed solution satisfactory (y/n)?')
         if not satisfactory:
             revise_result = self.revise_possibilities(proposed_solutions, columns)
-            print('***************************************\n')
-            index = ['Final revised solution']
-            self.print_solutions([revise_result], columns, index, print_pre_message=False)
-            print('***************************************')
+            if revise_result is not None:
+                print('***************************************')
+                print('\t\tEXPERT OPINION END\n')
+                index = ['Final revised solution']
+                self.print_solutions([revise_result], columns, index, print_pre_message=False)
+                print('***************************************')
         else:
             revise_result = proposed_solution
+            print('***************************************\n')
+            print('\t\tEXPERT OPINION END\n')
             print('The proposed solution has been confirmed!')
+            print('***************************************')
         return revise_result
 
     def print_solutions(self, proposed_solutions, columns, index, print_pre_message=True):
@@ -306,7 +328,10 @@ class PCBR:
                     satisfactory = not self.ask_if('Would you like to change something more (y/n)?')
             return self.ask_which_solution_is_final(proposed_solutions, index)
         else:
+            print('***************************************\n')
+            print('\t\tEXPERT OPINION END\n')
             print('The proposed solution has been dropped!')
+            print('***************************************')
             return None
 
     def extract_all_values_for_component(self, selected_component):
@@ -372,9 +397,71 @@ class PCBR:
             else:
                 print(f'Invalid choice: {cli_input}')
 
-    def retain(self, proposed_solution=None, revision_result=None):
+    def retain(self, revised_solution=None, user_profile=None, n_neighbors=3):
         assert proposed_solution is not None and revision_result is not None
-        # TODO measuring all distances to understand if this found configuration should be kept
+
+        source = self.source_attributes
+        target = self.target_attributes
+        numeric_revised_solution = self.adapt_pc.from_pc_to_numeric(revised_solution)
+
+        knn = OurNearestNeighbors(n_neighbors=n_neighbors).fit(target.to_numpy())
+        neigh = knn.kneighbors_graph(target.to_numpy())
+        prediction = knn.kneighbors([numeric_revised_solution])
+
+        stats = self.extract_statistics(neigh, n_neighbors)
+        print('\n---------------------------------------')
+        pcbr_logger.debug(f"Distance to the closest point from the prediction: {prediction[0][0][0]}")
+        pcbr_logger.debug(f"STATISTICS")
+        pcbr_logger.debug(stats.head(), '\n')
+        if prediction[0][0][0] >= stats['85%'][0]:
+            print("The proposed solution has been stored!")
+            df_user_profile = pd.DataFrame(user_profile, columns=source.columns.tolist())
+            df_revised_solution = pd.DataFrame([numeric_revised_solution], columns=target.columns.tolist())
+            # Adding source and target numerical solution to our data in memory
+            self.source_attributes = self.source_attributes.append(df_user_profile, ignore_index=True)
+            self.target_attributes = self.target_attributes.append(df_revised_solution, ignore_index=True)
+            # TODO we have to save the source and target solution as human friendly data?
+            # TODO this is already done for the target solution. in self.save_new_solution(revised_solution)
+            # self.save_new_solution(revised_solution)
+        else:
+            print("The proposed solution has NOT been stored!")
+        print('---------------------------------------\n')
+
+    def extract_statistics(self, neigh, n_neighbors, plot_points=True):
+        distances_map = {point: [] for point in range(1, n_neighbors)}
+        for index, distance in enumerate(neigh.data):
+            mode = index % n_neighbors
+            if mode != 0:
+                distances_map[mode].append(distance)
+        descriptions = []
+        for dist in distances_map.values():
+            df = pd.DataFrame(dist)
+            desc = df.describe(percentiles=[.25, .5, .75, .80, .85, .90, .95]).T
+            descriptions.append(desc)
+        statistics = pd.concat(descriptions, axis=0)
+        stats = pd.DataFrame(statistics.values, columns=statistics.columns)
+
+        # TODO to plot the distances between the nn of every instance in the dataset
+        if plot_points:
+            labels = ['base'] * self.number_of_base_instances
+            retained = ['retained'] * (len(distances_map[1]) - self.number_of_base_instances)
+            if len(retained) > 0:
+                labels.extend(retained)
+            plt.scatter(x=distances_map[1], y=labels, alpha=0.5, cmap='viridis', s=100)
+            plt.show()
+        return stats
+
+    def save_new_solution(self, revised_solution):
+        path = f"../data/retained/pcbr_{self.run_timestamp}.csv"
+        columns = self.target_attributes.columns.tolist()
+        solution = pd.DataFrame([revised_solution], columns=columns, index=None)
+        if os.path.isfile(path):
+            retained = pd.read_csv(path, index_col=None)
+            retained = retained.append(solution, ignore_index=True)
+        else:
+            retained = solution
+
+        retained.to_csv(path, index=False)
 
 
 if __name__ == '__main__':
@@ -396,18 +483,22 @@ if __name__ == '__main__':
             break
 
         # user_request is a UserRequest object, keep moving forward.
-        nearest_cases, distances = pcbr.retrieve(new_instance=user_request.profile, feature_weights=user_request.preferences, n_neighbors=3)
+        n_neighbors = 3
+        nearest_cases, distances = pcbr.retrieve(new_instance=user_request.profile,
+                                                 feature_weights=user_request.preferences, n_neighbors=n_neighbors)
         pcbr_logger.debug(nearest_cases)
         pcbr_logger.debug(nearest_cases.shape)
 
         proposed_solution = pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances, user_request=user_request)
 
+        proc_time = time.time()
         revision_result = pcbr.revise(proposed_solution)
-        pcbr.retain(proposed_solution, revision_result)
+        if revision_result is not None:  # If the expert has not dropped the solution
+            pcbr.retain(revision_result, user_request.profile, n_neighbors=n_neighbors)
+
+        rev_ret_time = time.time()
 
         # compute ending time and print it, move onto next item
-        en = time.time() - st
-        pcbr_logger.debug(f'time for processing an instance {en:.2f}s')
+        pcbr_logger.info(f'time for processing an instance {proc_time - st:.2f}s, time for revision and {rev_ret_time - st:.2f}s')
 
-    # TODO: Should we write new case base to file and exit or just keep looping?
     # Kevin: I think that we talked yesterday about just keeping the loop.
