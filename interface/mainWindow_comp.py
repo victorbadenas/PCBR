@@ -801,6 +801,7 @@ class Ui_MainWindow(object):
             self.pcbr.transformations,
             self.pcbr.feature_relevance_matrix
         )
+        self.pcbr.set_input_profile(user_request)
 
         app_logger.info(f'user_request: {user_request}')
 
@@ -815,8 +816,9 @@ class Ui_MainWindow(object):
         rev_ret_time = time.time()
 
         revision_result = self.revise(proposed_solution)
-        # if revision_result is not None:  # If the expert has not dropped the solution
-        #     self.pcbr.retain(revision_result, user_request.profile, n_neighbors=3)
+        if revision_result is not None:  # If the expert has not dropped the solution
+            self.pcbr.retain(revision_result, user_request.profile, n_neighbors=3)
+            self.pcbr.save_model()
 
         app_logger.info(f'time for processing an instance {proc_time - st:.2f}s, time for revision and {rev_ret_time - st:.2f}s')
 
