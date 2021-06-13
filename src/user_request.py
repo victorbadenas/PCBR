@@ -7,7 +7,7 @@ from pprint import pformat
 class UserRequest:
     profile_format = ["Experience", "WFH", "Primary use", "Budget", 
         "Replace (1-most frequent; 4-least frequent)", 
-        "Optical Drive (1 = DVD; 0 = None)", "Photoshop", "VideoChat", "ML", "Compilers", 
+        "Office", "Photoshop", "VideoChat", "ML", "Compilers", 
         "HighPerformanceGames", "LowPerformanceGames"]
 
     def __init__(self, profile_str, pref_str, constraints_str, scalers, feature_relevance_matrix):
