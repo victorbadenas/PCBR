@@ -143,3 +143,6 @@ cscope.out
 
 # Script output
 data/new_prices.csv
+
+#PyQt5 files
+*.ui
