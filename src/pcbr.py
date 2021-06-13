@@ -12,7 +12,7 @@ from data.mapper import Mapper
 from utils.io import read_file
 from utils.typing import represents_int, str_to_dict
 from neighbors.knn import KNeighborsClassifier
-from neighbors.nn import NearestNeighbors as OurNearestNeighbors
+from neighbors.nn import NearestNeighbors
 from adapt_pc import AdaptPC
 from user_request import UserRequest
 from matplotlib import pyplot as plt
@@ -417,7 +417,7 @@ class PCBR:
         target = self.target_attributes
         numeric_revised_solution = self.adapt_pc.from_pc_to_numeric(revised_solution)
 
-        knn = OurNearestNeighbors(n_neighbors=n_neighbors).fit(target.to_numpy())
+        knn = NearestNeighbors(n_neighbors=n_neighbors).fit(target.to_numpy())
         neigh = knn.kneighbors_graph(target.to_numpy())
         prediction = knn.kneighbors([numeric_revised_solution])
 
@@ -513,5 +513,3 @@ if __name__ == '__main__':
 
         # compute ending time and print it, move onto next item
         pcbr_logger.info(f'time for processing an instance {proc_time - st:.2f}s, time for revision and {rev_ret_time - st:.2f}s')
-
-    # Kevin: I think that we talked yesterday about just keeping the loop.
