@@ -3,11 +3,12 @@ from collections.abc import Callable
 from typing import Union
 import numpy as np
 from datetime import datetime
+import pandas as pd
+from matplotlib import pyplot as plt
 
 sys.path.append(os.path.dirname(__file__))
 
 from data.preprocessor import read_initial_cbl, read_table
-import pandas as pd
 from data.mapper import Mapper
 from utils.io import read_file
 from utils.typing import represents_int, str_to_dict
@@ -15,7 +16,6 @@ from neighbors.knn import KNeighborsClassifier
 from neighbors.nn import NearestNeighbors
 from adapt_pc import AdaptPC
 from user_request import UserRequest
-from matplotlib import pyplot as plt
 
 # Logger objects
 pcbr_logger = logging.getLogger('pcbr')
