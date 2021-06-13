@@ -1,4 +1,0 @@
-CPU,RAM (GB),SSD (GB),HDD (GB),GPU,Optical Drive (1 = DVD; 0 = None),Price (€)
-Intel Core i5-11600K,16.0,4000.0,1000.0,Integrated,1.0,881.56
-AMD Ryzen 9 5950X,16.0,500.0,4000.0,Integrated,1.0,1261.64
-AMD Ryzen 9 5950X,16.0,250.0,4000.0,GeForce GTX 1650,1.0,1386.26

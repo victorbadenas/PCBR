@@ -38,6 +38,11 @@ def setup_logging():
     retain_logger.setLevel(logging.INFO)
 
 
+def save_pcbr():
+    # TODO save all source and target instances in what format?
+    pass
+
+
 class PCBR:
     def __init__(self, cbl_path='../data/pc_specs.csv',
                        cpu_path='../data/cpu_table.csv',
@@ -89,6 +94,7 @@ class PCBR:
         self.adapt_pc = AdaptPC(self)
         date_time = datetime.now()
         self.run_timestamp = date_time.strftime("%Y-%m-%d-%H-%M-%S")
+        self.number_of_base_instances = self.target_attributes.shape[0]
 
         pcbr_logger.info('Initialization complete!')
 
@@ -167,6 +173,7 @@ class PCBR:
     def get_user_input(input_message_string:str, expected_format:Callable, exit_str:str='exit') -> Union[str, None]:
         user_input_string = input(input_message_string).strip()
         if user_input_string == exit_str:
+            save_pcbr()
             return None
         while not expected_format(user_input_string):
             print('Wrong format...')
@@ -390,14 +397,15 @@ class PCBR:
             else:
                 print(f'Invalid choice: {cli_input}')
 
-    def retain(self, revised_solution=None, n_neighbors=3):
+    def retain(self, revised_solution=None, user_profile=None, n_neighbors=3):
         assert proposed_solution is not None and revision_result is not None
 
-        target = self.target_attributes.to_numpy()
+        source = self.source_attributes
+        target = self.target_attributes
         numeric_revised_solution = self.adapt_pc.from_pc_to_numeric(revised_solution)
 
-        knn = OurNearestNeighbors(n_neighbors=n_neighbors).fit(target)
-        neigh = knn.kneighbors_graph(target)
+        knn = OurNearestNeighbors(n_neighbors=n_neighbors).fit(target.to_numpy())
+        neigh = knn.kneighbors_graph(target.to_numpy())
         prediction = knn.kneighbors([numeric_revised_solution])
 
         stats = self.extract_statistics(neigh, n_neighbors)
@@ -407,12 +415,19 @@ class PCBR:
         pcbr_logger.debug(stats.head(), '\n')
         if prediction[0][0][0] >= stats['85%'][0]:
             print("The proposed solution has been stored!")
-            self.save_new_solution(revised_solution)
+            df_user_profile = pd.DataFrame(user_profile, columns=source.columns.tolist())
+            df_revised_solution = pd.DataFrame([numeric_revised_solution], columns=target.columns.tolist())
+            # Adding source and target numerical solution to our data in memory
+            self.source_attributes = self.source_attributes.append(df_user_profile, ignore_index=True)
+            self.target_attributes = self.target_attributes.append(df_revised_solution, ignore_index=True)
+            # TODO we have to save the source and target solution as human friendly data?
+            # TODO this is already done for the target solution. in self.save_new_solution(revised_solution)
+            # self.save_new_solution(revised_solution)
         else:
             print("The proposed solution has NOT been stored!")
         print('---------------------------------------\n')
 
-    def extract_statistics(self, neigh, n_neighbors, plot_points=False):
+    def extract_statistics(self, neigh, n_neighbors, plot_points=True):
         distances_map = {point: [] for point in range(1, n_neighbors)}
         for index, distance in enumerate(neigh.data):
             mode = index % n_neighbors
@@ -428,7 +443,11 @@ class PCBR:
 
         # TODO to plot the distances between the nn of every instance in the dataset
         if plot_points:
-            plt.scatter(distances_map[1], [0]*len(distances_map[1]), alpha=0.5, cmap='reds', s=100)
+            labels = ['base'] * self.number_of_base_instances
+            retained = ['retained'] * (len(distances_map[1]) - self.number_of_base_instances)
+            if len(retained) > 0:
+                labels.extend(retained)
+            plt.scatter(x=distances_map[1], y=labels, alpha=0.5, cmap='viridis', s=100)
             plt.show()
         return stats
 
@@ -475,7 +494,7 @@ if __name__ == '__main__':
         proc_time = time.time()
         revision_result = pcbr.revise(proposed_solution)
         if revision_result is not None:  # If the expert has not dropped the solution
-            pcbr.retain(revision_result, n_neighbors=n_neighbors)
+            pcbr.retain(revision_result, user_request.profile, n_neighbors=n_neighbors)
 
         rev_ret_time = time.time()
 
