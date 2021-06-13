@@ -39,3 +39,7 @@ if __name__ == "__main__":
 To run all unittests: `python -m unittest discover -v`
 
 ## Run
+
+```bash
+python interface/welcomePage.py
+```

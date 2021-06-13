@@ -5,6 +5,13 @@ def represents_int(s):
     except ValueError:
         return False
 
+def represents_float(s):
+    try: 
+        float(s)
+        return True
+    except ValueError:
+        return False
+
 def str_to_dict(s, sep=","):
     d = dict()
     for sub_s in s.split(sep):
