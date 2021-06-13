@@ -37,22 +37,18 @@ def setup_logging():
     revise_logger.setLevel(logging.INFO)
     retain_logger.setLevel(logging.INFO)
 
-
-def save_pcbr():
-    # TODO save all source and target instances in what format?
-    pass
-
-
 class PCBR:
-    def __init__(self, cbl_path:str='../data/pc_specs.csv',
-                       cpu_path:str='../data/cpu_table.csv',
-                       gpu_path:str='../data/gpu_table.csv',
-                       ram_path:str='../data/ram_table.csv',
-                       ssd_path:str='../data/ssd_table.csv',
-                       hdd_path:str='../data/hdd_table.csv',
-                       opt_drive_path:str='../data/optical_drive_table.csv',
-                       feature_scalers_meta:str='../data/feature_scalers.json',
-                       feature_relevance_path:str='../data/feature_relevance.csv'):
+    def __init__(self, cbl_path='../data/pc_specs.csv',
+                       cpu_path='../data/cpu_table.csv',
+                       gpu_path='../data/gpu_table.csv',
+                       ram_path='../data/ram_table.csv',
+                       ssd_path='../data/ssd_table.csv',
+                       hdd_path='../data/hdd_table.csv',
+                       opt_drive_path='../data/optical_drive_table.csv',
+                       feature_scalers_meta='../data/feature_scalers.json',
+                       feature_relevance_path='../data/feature_relevance.csv',
+                       output_retain_path='../data/retained',
+                       output_saved_model_path='../data/pcbr_stored'):
 
         pcbr_logger.info('Initializing...')
         # 
@@ -105,9 +101,18 @@ class PCBR:
 
         # initialize the adapt_pc object
         self.adapt_pc = AdaptPC(self)
+        self.number_of_base_instances = self.target_attributes.shape[0]
+
         date_time = datetime.now()
         self.run_timestamp = date_time.strftime("%Y-%m-%d-%H-%M-%S")
-        self.number_of_base_instances = self.target_attributes.shape[0]
+        self.cbl_path = cbl_path
+        self.retain_source_path = f"{output_retain_path}/pcbr_source_{self.run_timestamp}.csv"
+        self.retain_target_path = f"{output_retain_path}/pcbr_target_{self.run_timestamp}.csv"
+        self.output_saved_model_path = f"{output_saved_model_path}/pcbr_cbl_{self.run_timestamp}.csv"
+        self.input_profile = None
+        self.input_pref = None
+        self.input_constraints = None
+        self.new_instance_marker = '##NEW PCBR INSTANCE##'
 
         pcbr_logger.info('Initialization complete!')
 
@@ -138,12 +143,17 @@ class PCBR:
 
             # load current iteration mock request
             request_strings = self.mock_user_requests[self.mock_requests_idx]
-            
+            self.input_profile = request_strings[0].split(',')
+            if len(request_strings) >= 2 and request_strings[1] is not None:
+                self.input_pref = request_strings[1].split(',')
+            if len(request_strings) == 3 and request_strings[2] is not None:
+                self.input_constraints = request_strings[2].split(',')
+
             # increment pointer
             self.mock_requests_idx += 1
 
             # return request built with mock request trings
-            return UserRequest(*request_strings, self.transformations,self.feature_relevance_matrix)
+            return UserRequest(*request_strings, self.transformations, self.feature_relevance_matrix)
         else:
             # TODO: CLI request
             profile_str, pref_str, constraints_str = self.get_cli_requests()
@@ -186,7 +196,6 @@ class PCBR:
     def get_user_input(input_message_string:str, expected_format:Callable, exit_str:str='exit') -> Union[str, None]:
         user_input_string = input(input_message_string).strip()
         if user_input_string == exit_str:
-            save_pcbr()
             return None
         while not expected_format(user_input_string):
             print('Wrong format...')
@@ -196,7 +205,7 @@ class PCBR:
         return user_input_string
 
     @staticmethod
-    def profile_str_valid(string:str):
+    def profile_str_valid(string: str):
         split_str = string.split(',')
         if len(split_str) != 12:
             return False
@@ -205,7 +214,7 @@ class PCBR:
         return all(int_check)
 
     @staticmethod
-    def preference_str_valid(string:str):
+    def preference_str_valid(string: str):
         split_str = string.split(',')
         if len(split_str) != 13:
             return False
@@ -213,7 +222,7 @@ class PCBR:
         return all(int_check)
 
     @staticmethod
-    def constraints_str_valid(string:str):
+    def constraints_str_valid(string: str):
         try:
             str_to_dict(string)
             return True
@@ -272,7 +281,7 @@ class PCBR:
             print('***************************************')
         return revise_result
 
-    def print_solutions(self, proposed_solutions, columns, index, print_pre_message=True):
+    def print_solutions(self, proposed_solutions, columns, index, print_pre_message=False):
         dataframe = pd.DataFrame(proposed_solutions, columns=columns, index=index)
         pd.set_option('max_columns', None)
         pd.set_option('display.expand_frame_repr', False)
@@ -433,14 +442,12 @@ class PCBR:
             # Adding source and target numerical solution to our data in memory
             self.source_attributes = self.source_attributes.append(df_user_profile, ignore_index=True)
             self.target_attributes = self.target_attributes.append(df_revised_solution, ignore_index=True)
-            # TODO we have to save the source and target solution as human friendly data?
-            # TODO this is already done for the target solution. in self.save_new_solution(revised_solution)
-            # self.save_new_solution(revised_solution)
+            self.save_new_solution(revised_solution)
         else:
             print("The proposed solution has NOT been stored!")
         print('---------------------------------------\n')
 
-    def extract_statistics(self, neigh, n_neighbors, plot_points=True):
+    def extract_statistics(self, neigh, n_neighbors, plot_points=False):
         distances_map = {point: [] for point in range(1, n_neighbors)}
         for index, distance in enumerate(neigh.data):
             mode = index % n_neighbors
@@ -454,7 +461,7 @@ class PCBR:
         statistics = pd.concat(descriptions, axis=0)
         stats = pd.DataFrame(statistics.values, columns=statistics.columns)
 
-        # TODO to plot the distances between the nn of every instance in the dataset
+        # Function used to plot the distances between the nn of every instance in the dataset
         if plot_points:
             labels = ['base'] * self.number_of_base_instances
             retained = ['retained'] * (len(distances_map[1]) - self.number_of_base_instances)
@@ -465,16 +472,35 @@ class PCBR:
         return stats
 
     def save_new_solution(self, revised_solution):
-        path = f"../data/retained/pcbr_{self.run_timestamp}.csv"
-        columns = self.target_attributes.columns.tolist()
+        self.update_dataset(self.input_profile, self.source_attributes.columns.tolist(), self.retain_source_path)
+        self.update_dataset(revised_solution, self.target_attributes.columns.tolist(), self.retain_target_path)
+
+    def update_dataset(self, revised_solution, columns, path):
         solution = pd.DataFrame([revised_solution], columns=columns, index=None)
         if os.path.isfile(path):
             retained = pd.read_csv(path, index_col=None)
             retained = retained.append(solution, ignore_index=True)
         else:
             retained = solution
-
         retained.to_csv(path, index=False)
+
+    def save_model(self):
+        if os.path.isfile(self.retain_source_path) and os.path.isfile(self.retain_target_path):
+            source = pd.read_csv(self.retain_source_path, index_col=None)
+            target = pd.read_csv(self.retain_target_path, index_col=None)
+            retained_instances = pd.concat([target, source], axis=1)
+            dropped_column = 'Comments (don\'t use commas)'
+            retained_instances[dropped_column] = self.new_instance_marker
+
+            pc_specs = pd.read_csv(self.cbl_path, index_col=None)
+            pc_specs_max_id = pc_specs['ID'].max()+1
+            retained_instances.insert(0, 'ID', list(range(pc_specs_max_id, pc_specs_max_id + target.shape[0])))
+            pc_specs = pc_specs.append(retained_instances, ignore_index=True)
+            pc_specs.to_csv(self.output_saved_model_path, index=False)
+            pcbr_logger.info(f'Model saved at: {self.output_saved_model_path}')
+            os.remove(self.retain_source_path)
+            os.remove(self.retain_target_path)
+            pcbr_logger.info('Source and Target files removed!')
 
 
 if __name__ == '__main__':
@@ -508,7 +534,7 @@ if __name__ == '__main__':
         revision_result = pcbr.revise(proposed_solution)
         if revision_result is not None:  # If the expert has not dropped the solution
             pcbr.retain(revision_result, user_request.profile, n_neighbors=n_neighbors)
-
+            pcbr.save_model()
         rev_ret_time = time.time()
 
         # compute ending time and print it, move onto next item
