@@ -636,6 +636,13 @@ class Ui_MainWindow(object):
         )
         app_logger.info(f'PCBR initialized')
 
+        for k, v in self.__dict__.items():
+            if "radioButton" in k:
+                v.clicked.connect(self.msgbtn)
+                
+        for cb in self.application_checkboxes:
+            cb.clicked.connect(self.msgbtn)
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "User Profile"))
@@ -947,7 +954,16 @@ class Ui_MainWindow(object):
         returnValue = qbox.exec()
         return returnValue == QtWidgets.QMessageBox.Yes
 
-
+    def msgbtn(self, i):
+        pressed = ""
+        for k, v in self.__dict__.items():
+            if "radioButton" in k:
+                if v.isChecked():
+                    pressed += v.text() + ", "
+        for cb in self.application_checkboxes:
+            if cb.isChecked():
+                pressed += cb.text() + ", "
+        app_logger.debug(pressed)
 
 if __name__ == "__main__":
     import sys
