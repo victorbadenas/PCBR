@@ -2,11 +2,12 @@ import numpy as np
 
 from constraints import Constraints
 from utils.typing import str_to_dict
+from pprint import pformat
+
 class UserRequest:
     profile_format = ["Experience", "WFH", "Primary use", "Budget", 
         "Replace (1-most frequent; 4-least frequent)", 
-        "Office", "Photoshop", "VideoChat", "ML", "Compilers", 
-        "HighPerformanceGames", "LowPerformanceGames"]
+        "Optical Drive (1 = DVD; 0 = None)"]
 
     def __init__(self, profile_str, pref_str, constraints_str, scalers, feature_relevance_matrix):
         self.profile = self._process_profile(profile_str, scalers)
@@ -14,12 +15,10 @@ class UserRequest:
         self.constraints = self._process_constraints(constraints_str, scalers)
 
     def _process_profile(self, profile_str:str, scalers:dict=None) -> np.ndarray:
-        # Input format: Experience, WFH, Primary Use, Budget, Replace, Office, Photoshop, VideoChat, ML, Compilers, HighPerformanceGames, LowPerformanceGames
-        # Input example (exactly matches case 2): '2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0'
+        # Input format: Experience, WFH, Primary Use, Budget, Replace, Optical
+        # Input example (exactly matches case 2): '2, 1, Programming, 1, 3, 1'
         # Output format: numpy array suitable to look up nearest case in case library (Note: you will need to
         #                apply pre-processing to obtain the correct output format)
-        # Example output: [[0.25       1.         0.6        0.         0.66666667 1.
-        #                   0.         0.         0.         1.         0.         0.        ]]
         profile = profile_str.split(',')
         if scalers is None:
             return np.array(list(map(float, profile)))
@@ -72,4 +71,8 @@ class UserRequest:
         constraints_dict = str_to_dict(constraints_str)
         return Constraints(constraints_dict)
 
+    def __str__(self):
+        return f'{self.__class__.__name__}: \n{pformat(self.__dict__)}'
 
+    def __repr__(self):
+        return self.__str__()
