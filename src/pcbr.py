@@ -3,6 +3,7 @@ from collections.abc import Callable
 from typing import Union
 import numpy as np
 from datetime import datetime
+import seaborn as sn
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -16,6 +17,7 @@ from neighbors.nn import NearestNeighbors as OurNearestNeighbors
 from adapt_pc import AdaptPC
 from user_request import UserRequest
 from matplotlib import pyplot as plt
+from sklearn.decomposition import PCA
 
 # Logger objects
 pcbr_logger = logging.getLogger('pcbr')
@@ -429,14 +431,16 @@ class PCBR:
         target_neigh = target_knn.kneighbors_graph(target.to_numpy())
         target_pred = target_knn.kneighbors([numeric_revised_solution])
         target_pred_first_distance = target_pred[0][0][0]
-        target_stats = self.extract_statistics(target_neigh, target_pred_first_distance, n_neighbors, title='Solution')
+        target_stats = self.extract_statistics(target_neigh, target_pred_first_distance,
+                                               target, [numeric_revised_solution], n_neighbors, title='Solution')
 
         source = self.source_attributes
         source_knn = OurNearestNeighbors(n_neighbors=n_neighbors).fit(source.to_numpy())
         source_neigh = source_knn.kneighbors_graph(source.to_numpy())
         source_pred = source_knn.kneighbors(user_profile)
         source_pred_first_distance = source_pred[0][0][0]
-        source_stats = self.extract_statistics(source_neigh, source_pred_first_distance, n_neighbors, title='Problem')
+        source_stats = self.extract_statistics(source_neigh, source_pred_first_distance,
+                                               source, user_profile, n_neighbors, title='Problem')
 
         print('\n---------------------------------------')
         pcbr_logger.debug(f"Distance to the closest point from the prediction: {target_pred_first_distance}")
@@ -454,7 +458,7 @@ class PCBR:
             print("The proposed solution has NOT been stored!")
         print('---------------------------------------\n')
 
-    def extract_statistics(self, neigh, pred, n_neighbors, plot_points=True, title='Solution'):
+    def extract_statistics(self, neigh, pred, dataset, instance, n_neighbors, plot_points=True, title='Solution'):
         distances_map = {point: [] for point in range(1, n_neighbors)}
         for index, distance in enumerate(neigh.data):
             mode = index % n_neighbors
@@ -471,6 +475,7 @@ class PCBR:
         # Function used to plot the distances between the nn of every instance in the dataset
         if plot_points:
             self.plot_first_nn_distances(distances_map, pred, stats, title)
+            self.plot_pca(dataset, instance, title=f'{title} 2D PCA')
         return stats
 
     def plot_first_nn_distances(self, distances_map, pred, stats, title):
@@ -478,7 +483,7 @@ class PCBR:
         retained = len(distances_map[1]) - self.number_of_base_instances
         if retained > 0:
             colors = ['tab:blue', 'tab:green', 'tab:red']
-            labels = ['base', 'retained', f'New {title}']
+            labels = ['Base', 'Retained', f'New {title}']
             X = [distances_map[1][:self.number_of_base_instances],
                  distances_map[1][self.number_of_base_instances:],
                  [pred]]
@@ -502,6 +507,33 @@ class PCBR:
                             edgecolors='none')
         plt.title(f'{title} distances to the NN')
         plt.legend(loc='best', title='Instance type')
+        plt.tight_layout()
+        plt.show()
+
+    def plot_pca(self, dataset, instance, title):
+        retained = dataset.shape[0] - self.number_of_base_instances
+        if retained > 0:
+            labels = ['Base']*self.number_of_base_instances
+            retained = ['Retained']*retained
+            new_sol = [f'New {title}']
+            labels.extend(retained)
+            labels.extend(new_sol)
+        else:
+            labels = ['Base'] * self.number_of_base_instances
+            new_sol = [f'New {title}']
+            labels.extend(new_sol)
+        pred_df = pd.DataFrame(instance, columns=dataset.columns.tolist())
+        dataset = dataset.append(pred_df, ignore_index=True)
+        self.plot_pca_2D(dataset=dataset, labels=labels, plot_title=title)
+
+    def plot_pca_2D(self, dataset, labels, plot_title=''):
+        pca = PCA(n_components=2)
+        df_2D = pd.DataFrame(pca.fit_transform(dataset), columns=['PCA1', 'PCA2'])
+        df_2D['Instance type'] = labels
+        sn.lmplot(x="PCA1", y="PCA2", data=df_2D, fit_reg=False, hue='Instance type', legend=False, scatter_kws={"s": 25})
+        plt.legend(title='Instance type', loc='best')
+        plt.title(plot_title)
+        plt.tight_layout()
         plt.show()
 
     def save_new_solution(self, revised_solution):
