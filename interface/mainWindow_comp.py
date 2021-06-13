@@ -15,6 +15,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from pcbr import PCBR
 from utils.typing import represents_float
+from user_request import UserRequest
+
 app_logger = logging.getLogger('app')
 pd.set_option('max_columns', None)
 pd.set_option('display.expand_frame_repr', False)
@@ -24,6 +26,9 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(846, 668)
+
+        MainWindow.setWindowTitle("User Request")
+        self.center()
 
         self.radio_groups = dict()
         self.radio_groups_values = dict()
@@ -154,7 +159,7 @@ class Ui_MainWindow(object):
         self.radioButton_12.setObjectName("radioButton_12")
         self.verticalLayout.addWidget(self.radioButton_12)
         self.radio_groups["primary_use"] = [self.radioButton_8, self.radioButton_11, self.radioButton_10, self.radioButton_12, self.radioButton_13, self.radioButton_23]
-        self.radio_groups_values["primary_use"] = [0, 1, 5, 2, 4, 3]
+        self.radio_groups_values["primary_use"] = ['Home', 'Work', 'Gaming', 'Production', 'ML', 'Programming']
 
         # Home, Work, Gaming, Production, ML, Programming
         # Do you need an optical drive?
@@ -707,6 +712,13 @@ class Ui_MainWindow(object):
         self.label_16.setText(_translate("MainWindow", "Maximum budget"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Advanced"))
 
+    def center(self):
+        return
+        qr = self.frameGeometry()
+        cp = QDesktopWidget().availableGeometry().center()
+        qr.movecenter(cp)
+        self.move(qr.topLeft())
+
     def check_all_correct(self):
         for rb_group in self.radio_groups.keys():
             if not any([rb.isChecked() for rb in self.radio_groups[rb_group]]):
@@ -744,7 +756,9 @@ class Ui_MainWindow(object):
                 if rb.isChecked():
                     values.append(str(self.radio_groups_values[key][idx]))
 
-        for checkbox in self.application_checkboxes:
+        for idx, checkbox in enumerate(self.application_checkboxes):
+            if idx in [1, 2]:
+                continue
             if checkbox.isChecked():
                 values.append('1')
             else:
@@ -762,18 +776,20 @@ class Ui_MainWindow(object):
         return ', '.join(values)
 
     def run_pcbr(self):
-        from user_request import UserRequest
-
-        if not self.check_all_correct():
-            app_logger.info(f'all values have not been completed.')
-            return
-        else:
-            app_logger.info(f'all values correct, proceeding to run pcbr')
+        # if not self.check_all_correct():
+        #     app_logger.info(f'all values have not been completed.')
+        #     return
+        # else:
+        #     app_logger.info(f'all values correct, proceeding to run pcbr')
 
         # TODO: pcbr
-        profile_str = self.build_profile_str()
-        pref_str = self.build_pref_str()
-        constraints_str = self.build_constraints_str()
+        # profile_str = self.build_profile_str()
+        # pref_str = self.build_pref_str()
+        # constraints_str = self.build_constraints_str()
+
+        profile_str = "2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0"
+        pref_str = "5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0"
+        constraints_str = "cpu_brand: PreferIntel, gpu_brand: AMD, min_ram: 32, max_budget: 1500, optical_drive: yes"
 
         app_logger.info(f'profile_str: {profile_str}')
         app_logger.info(f'pref_str: {pref_str}')
@@ -809,8 +825,10 @@ class Ui_MainWindow(object):
         index = ['Proposed solution']
         columns = self.pcbr.target_attributes.columns.tolist()
         satisfactory = self.print_solutions(proposed_solutions, columns, index)
+        app_logger.info(f'{satisfactory}')
 
     def print_solutions(self, proposed_solutions, columns, index):
+        columns[-2] = "Optical Drive"
         dataframe = pd.DataFrame(proposed_solutions, columns=columns, index=index)
 
         if len(index) == 1:
@@ -819,13 +837,17 @@ class Ui_MainWindow(object):
             text = "The modified solutions are the following:"
 
         revise_qbox = QtWidgets.QMessageBox()
-        revise_qbox.setIcon(QtWidgets.QMessageBox.Information)
+        revise_qbox.setFixedWidth(800)
         revise_qbox.setText(text)
+        revise_qbox.setFont(QtGui.QFont('Consolas', 9, QtGui.QFont.Monospace))
         revise_qbox.setInformativeText(dataframe.to_markdown())
         revise_qbox.setWindowTitle("Solutions")
-        revise_qbox.setDetailedText("Is the latter proposed solution satisfactory:")
+        revise_qbox.setDetailedText(dataframe.to_markdown())
         revise_qbox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         revise_qbox.buttonClicked.connect(msgbtn)
+
+        returnValue = revise_qbox.exec()
+        return returnValue == QtWidgets.QMessageBox.Yes
 
 def msgbtn(i):
    print("Button pressed is:", i.text())
