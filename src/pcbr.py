@@ -441,6 +441,7 @@ class PCBR:
         source_pred_first_distance = source_pred[0][0][0]
         source_stats = self.extract_statistics(source_neigh, source_pred_first_distance,
                                                source, user_profile, n_neighbors, title='Problem')
+        #TODO Study both source and target to select the best threshold possible.
 
         print('\n---------------------------------------')
         pcbr_logger.debug(f"Distance to the closest point from the prediction: {target_pred_first_distance}")
@@ -458,7 +459,7 @@ class PCBR:
             print("The proposed solution has NOT been stored!")
         print('---------------------------------------\n')
 
-    def extract_statistics(self, neigh, pred, dataset, instance, n_neighbors, plot_points=True, title='Solution'):
+    def extract_statistics(self, neigh, pred, dataset, instance, n_neighbors, plot_points=False, title='###'):
         distances_map = {point: [] for point in range(1, n_neighbors)}
         for index, distance in enumerate(neigh.data):
             mode = index % n_neighbors
