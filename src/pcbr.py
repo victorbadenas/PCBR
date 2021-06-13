@@ -534,7 +534,6 @@ if __name__ == '__main__':
         revision_result = pcbr.revise(proposed_solution)
         if revision_result is not None:  # If the expert has not dropped the solution
             pcbr.retain(revision_result, user_request.profile, n_neighbors=n_neighbors)
-            pcbr.save_model()
         rev_ret_time = time.time()
 
         # compute ending time and print it, move onto next item
