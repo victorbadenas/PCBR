@@ -1,9 +1,11 @@
 import os, sys, logging
-from collections.abc import Callable
-from typing import Union
 import numpy as np
-from datetime import datetime
 import pandas as pd
+
+from typing import Union
+from collections.abc import Callable
+from datetime import datetime
+from pathlib import Path
 from matplotlib import pyplot as plt
 
 sys.path.append(os.path.dirname(__file__))
@@ -114,6 +116,8 @@ class PCBR:
         self.input_constraints = None
         self.new_instance_marker = '##NEW PCBR INSTANCE##'
 
+        Path(self.retain_source_path).parent.mkdir(exist_ok=True, parents=True)
+        Path(self.retain_target_path).parent.mkdir(exist_ok=True, parents=True)
         pcbr_logger.info('Initialization complete!')
 
     def get_user_request(self, mock_file=None, mode='one_pass') -> UserRequest:
@@ -167,6 +171,11 @@ class PCBR:
                 self.feature_relevance_matrix
             )
             return user_req_rv
+
+    def set_input_profile(self, user_request:UserRequest):
+        self.input_profile = user_request.profile
+        self.input_pref = user_request.preferences
+        self.input_constraints = user_request.constraints
 
     def get_cli_requests(self):
         profile_str = self.get_user_input(
@@ -420,7 +429,7 @@ class PCBR:
                 print(f'Invalid choice: {cli_input}')
 
     def retain(self, revised_solution=None, user_profile=None, n_neighbors=3):
-        assert proposed_solution is not None and revision_result is not None
+        assert revised_solution is not None
 
         source = self.source_attributes
         target = self.target_attributes
@@ -435,7 +444,7 @@ class PCBR:
         pcbr_logger.debug(f"Distance to the closest point from the prediction: {prediction[0][0][0]}")
         pcbr_logger.debug(f"STATISTICS")
         pcbr_logger.debug(stats.head(), '\n')
-        if prediction[0][0][0] >= stats['85%'][0]:
+        if prediction[0][0][0] >= stats['50%'][0]:
             print("The proposed solution has been stored!")
             df_user_profile = pd.DataFrame(user_profile, columns=source.columns.tolist())
             df_revised_solution = pd.DataFrame([numeric_revised_solution], columns=target.columns.tolist())
@@ -476,7 +485,8 @@ class PCBR:
         self.update_dataset(revised_solution, self.target_attributes.columns.tolist(), self.retain_target_path)
 
     def update_dataset(self, revised_solution, columns, path):
-        solution = pd.DataFrame([revised_solution], columns=columns, index=None)
+        revised_solution = np.atleast_2d(revised_solution)
+        solution = pd.DataFrame(revised_solution, columns=columns, index=None)
         if os.path.isfile(path):
             retained = pd.read_csv(path, index_col=None)
             retained = retained.append(solution, ignore_index=True)
@@ -488,6 +498,13 @@ class PCBR:
         if os.path.isfile(self.retain_source_path) and os.path.isfile(self.retain_target_path):
             source = pd.read_csv(self.retain_source_path, index_col=None)
             target = pd.read_csv(self.retain_target_path, index_col=None)
+            # map to real values
+            for column in source:
+                t = self.transformations[column]
+                source[column][0] = t["scaler"].inverse_transform([[source[column][0]]])[0,0]
+                if "map" in t:
+                    inv_map = {v:k for k, v in t['map'].items()}
+                    source[column][0] = inv_map[int(source[column][0])]
             retained_instances = pd.concat([target, source], axis=1)
             dropped_column = 'Comments (don\'t use commas)'
             retained_instances[dropped_column] = self.new_instance_marker
