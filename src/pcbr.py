@@ -628,8 +628,8 @@ def run_pcbr():
         # starting time
         st = time.time()
 
-        # user_request = pcbr.get_user_request() # cli
-        user_request = pcbr.get_user_request(mock_file='../data/mock_requests.tsv', mode='one_pass')  # mock_file
+        user_request = pcbr.get_user_request() # cli
+        # user_request = pcbr.get_user_request(mock_file='../data/mock_requests.tsv', mode='one_pass')  # mock_file
 
         if not isinstance(user_request, UserRequest):
             # if get_user_request returns None, the mock file lines have been exhausted, stop run
