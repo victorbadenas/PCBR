@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sn
 
+from tqdm import tqdm
 from typing import Union
 from collections.abc import Callable
 from datetime import datetime
@@ -716,7 +717,7 @@ def run_generator(n_runs=1000):
     retain_times = []
     retained_count = []
     pcbr = PCBR()
-    for run_i in range(n_runs):
+    for run_i in tqdm(range(n_runs), total=n_runs):
         # starting time
         st = time.time()
 
@@ -752,5 +753,5 @@ def run_generator(n_runs=1000):
 
 
 if __name__ == '__main__':
-    # run_pcbr()
-    run_generator(n_runs=10000)
+    run_pcbr()
+    # run_generator(n_runs=10000)
