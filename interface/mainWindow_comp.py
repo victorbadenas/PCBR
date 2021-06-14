@@ -781,9 +781,20 @@ class Ui_MainWindow(object):
         values.append(f'max_budget: {self.textEdit.toPlainText()}')
         return ', '.join(values)
 
+    def show_warning(self, message):
+        wbox = QtWidgets.QMessageBox()
+        wbox.setFixedWidth(800)
+        wbox.setText(message)
+        wbox.setWindowTitle("Warning: unfilled answers")
+        wbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+
+        returnValue = wbox.exec()
+        return returnValue == QtWidgets.QMessageBox.Yes
+
     def run_pcbr(self):
         if not self.check_all_correct():
             app_logger.info(f'all values have not been completed.')
+            self.show_warning('Some of the attributes have not been set')
             return
         else:
             app_logger.info(f'all values correct, proceeding to run pcbr')
@@ -840,21 +851,25 @@ class Ui_MainWindow(object):
             if revise_result is not None:
                 index = ['Final revised solution']
                 app_logger.info(f'result revised')
-                self.print_solutions([revise_result], columns, index, text="Final Solution")
+                self.print_solutions([revise_result], columns, index, text="Select the final solution:")
         else:
             revise_result = proposed_solution
         return revise_result
 
     def revise_possibilities(self, proposed_solutions, components):
         want_to_modify = self.ask_binary_question(
-            'Would you like to change any components (y/n)? (n will drop the solution)'
+            'Would you like to change something else? Yes will open part selector and No will advance to the next step'
         )
         if want_to_modify:
             remaining_components = components[:-1]
             index = ['Original solution']
             satisfactory = False
             while len(remaining_components) > 0 and not satisfactory:
-                selected_component_idx = self.ask_radio_options(remaining_components, title='Select one component type between the following ones:')
+                selected_component_idx = self.ask_radio_options(
+                    remaining_components, 
+                    title='Select one component type between the following ones:',
+                    size=(400, 350) # TODO: resize
+                )
                 selected_component = remaining_components[selected_component_idx]
                 remaining_components.pop(selected_component_idx)
                 all_values = self.pcbr.extract_all_values_for_component(selected_component)
@@ -879,7 +894,7 @@ class Ui_MainWindow(object):
             
                 index.append(len(index))
                 if len(remaining_components) > 0:
-                    satisfactory = not self.print_solutions(proposed_solutions, components, index, text="Would you like to change something more (y/n)?")
+                    satisfactory = not self.print_solutions(proposed_solutions, components, index, text="Would you like to change something more (n/y)?")
                 else:
                     satisfactory = True
             return self.ask_which_solution_is_final(proposed_solutions, components, index)
@@ -899,7 +914,7 @@ class Ui_MainWindow(object):
         qbox.setFont(QtGui.QFont('Consolas', 9, QtGui.QFont.Monospace))
         qbox.setInformativeText(dataframe.to_markdown())
         qbox.setWindowTitle("Solutions")
-        qbox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        qbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
         qbox.show()
 
         return_value = self.ask_radio_options(index, title='Which option is final')
@@ -928,9 +943,9 @@ class Ui_MainWindow(object):
         
         if text is None:
             if len(index) == 1:
-                text = "The proposed solution is the following:"
+                text = "The proposed solution is the following. Is the solution acceptable?:"
             else:
-                text = "The modified solutions are the following:"
+                text = "The modified solutions are the following. Is the solution acceptable?:"
 
         revise_qbox = QtWidgets.QMessageBox()
         revise_qbox.setFixedWidth(800)
