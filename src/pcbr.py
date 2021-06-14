@@ -654,6 +654,15 @@ def run_pcbr():
             f'time for processing an instance {proc_time - st:.2f}s, time for revision and {rev_ret_time - st:.2f}s')
 
 
+def plot_result(data, title, y_label):
+    runs = range(1, len(data) + 1)
+    plt.plot(runs, data, '-', markersize=6)
+    plt.title(title)
+    plt.ylabel(y_label)
+    plt.xlabel('Runs')
+    # plt.savefig(f'../data/{title.replace(' ', '_')}.png')
+    plt.show()
+
 def run_generator(n_runs=1000):
     with open(f'../data/feature_scalers.json', 'r') as fp:
         scalers = json.load(fp)
@@ -670,13 +679,8 @@ def run_generator(n_runs=1000):
                         'min_ram:': {0: 'Idc', 1: '16', 2: '32', 3: '64', 4: '128'},
                         'optical_drive:': {0: 'no', 1: 'yes'}
                         }
-    # advanced_user = {'cpu_brand:': {0: 'Intel', 1: 'PreferIntel', 2: 'PreferAMD', 3: 'AMD'},
-    #                  'gpu_brand:': {0: 'NVIDIA', 1: 'PreferNVIDIA', 2: 'PreferAMD', 3: 'AMD'},
-    #                  'max_budget:': (scalers['Price (€)']['min'], scalers['Price (€)']['max']),
-    #                  'min_ram:': {0: '16', 1: '32', 2: '64', 3: '128'},
-    #                  'optical_drive:': {0: 'no', 1: 'yes'}
-    #                  }
 
+    random.seed(42)
     generator_path = '../data/generator.tsv'
     with open(generator_path, 'w') as f:
         for run_i in range(n_runs):
@@ -691,7 +695,7 @@ def run_generator(n_runs=1000):
 
             input_pref = []
             for max_val in preferences_max_values:
-                rnd = random.randint(0, max_val)
+                rnd = random.randint(1, max_val)
                 input_pref.append(str(rnd))
 
             input_constraints = []
@@ -710,7 +714,7 @@ def run_generator(n_runs=1000):
 
     proc_times = []
     retain_times = []
-    retained_count = 0
+    retained_count = []
     pcbr = PCBR()
     for run_i in range(n_runs):
         # starting time
@@ -729,17 +733,24 @@ def run_generator(n_runs=1000):
         result = pcbr.retain(proposed_solution, user_request.profile, n_neighbors=n_neighbors, verbose=False)
         if result is None:
             result = 0
-        retained_count += result
+        if run_i != 0:
+            prev_value = retained_count[len(retained_count)-1]
+        else:
+            prev_value = 0
+        retained_count.append(prev_value + result)
         rev_ret_time = time.time()
         time1 = proc_time - st
         proc_times.append(time1)
         time2 = rev_ret_time - st
         retain_times.append(time2)
+        print("{:.1%}".format(run_i / n_runs))
 
     print('retained_count:', retained_count)
-    # TODO add plots!
+    plot_result(data=proc_times, title='Retrieve-Reuse time per run', y_label='Execution time')
+    plot_result(data=retain_times, title='Retain time per run', y_label='Execution time')
+    plot_result(data=retained_count, title='Retain count per run', y_label='Retain count')
 
 
 if __name__ == '__main__':
     # run_pcbr()
-    run_generator()
+    run_generator(n_runs=10000)
