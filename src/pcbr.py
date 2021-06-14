@@ -670,6 +670,13 @@ def run_generator(n_runs=1000):
                         'min_ram:': {0: 'Idc', 1: '16', 2: '32', 3: '64', 4: '128'},
                         'optical_drive:': {0: 'no', 1: 'yes'}
                         }
+    # advanced_user = {'cpu_brand:': {0: 'Intel', 1: 'PreferIntel', 2: 'PreferAMD', 3: 'AMD'},
+    #                  'gpu_brand:': {0: 'NVIDIA', 1: 'PreferNVIDIA', 2: 'PreferAMD', 3: 'AMD'},
+    #                  'max_budget:': (scalers['Price (€)']['min'], scalers['Price (€)']['max']),
+    #                  'min_ram:': {0: '16', 1: '32', 2: '64', 3: '128'},
+    #                  'optical_drive:': {0: 'no', 1: 'yes'}
+    #                  }
+
     generator_path = '../data/generator.tsv'
     with open(generator_path, 'w') as f:
         for run_i in range(n_runs):
@@ -719,9 +726,11 @@ def run_generator(n_runs=1000):
         proposed_solution = pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances, user_request=user_request)
         proc_time = time.time()
         # Revise skipped!
-        retained_count += pcbr.retain(proposed_solution, user_request.profile, n_neighbors=n_neighbors, verbose=False)
+        result = pcbr.retain(proposed_solution, user_request.profile, n_neighbors=n_neighbors, verbose=False)
+        if result is None:
+            result = 0
+        retained_count += result
         rev_ret_time = time.time()
-
         time1 = proc_time - st
         proc_times.append(time1)
         time2 = rev_ret_time - st
