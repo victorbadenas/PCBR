@@ -4,18 +4,19 @@ from constraints import Constraints
 from utils.typing import str_to_dict
 from pprint import pformat
 
+
 class UserRequest:
-    profile_format = ["Experience", "WFH", "Primary use", "Budget", 
-        "Replace (1-most frequent; 4-least frequent)", 
-        "Office", "Photoshop", "VideoChat", "ML", "Compilers", 
-        "HighPerformanceGames", "LowPerformanceGames"]
+    profile_format = ["Experience", "WFH", "Primary use", "Budget",
+                      "Replace (1-most frequent; 4-least frequent)",
+                      "Office", "Photoshop", "VideoChat", "ML", "Compilers",
+                      "HighPerformanceGames", "LowPerformanceGames"]
 
     def __init__(self, profile_str, pref_str, constraints_str, scalers, feature_relevance_matrix):
         self.profile = self._process_profile(profile_str, scalers)
         self.preferences, self.raw_preferences = self._process_preferences(pref_str, feature_relevance_matrix, scalers)
         self.constraints = self._process_constraints(constraints_str, scalers)
 
-    def _process_profile(self, profile_str:str, scalers:dict=None) -> np.ndarray:
+    def _process_profile(self, profile_str: str, scalers: dict = None) -> np.ndarray:
         # Input format: Experience, WFH, Primary Use, Budget, Replace, Optical
         # Input example (exactly matches case 2): '2, 1, Programming, 1, 3, 1'
         # Output format: numpy array suitable to look up nearest case in case library (Note: you will need to
@@ -35,12 +36,13 @@ class UserRequest:
                 value = float(value)
 
             if mapper['log2']:
-                value = np.log2(value+1)
+                value = np.log2(value + 1)
 
-            profile[i] = mapper['scaler'].transform([[value]])[0,0]
+            profile[i] = mapper['scaler'].transform([[value]])[0, 0]
         return np.array(profile).reshape(1, -1)
 
-    def _process_preferences(self, pref_str:str, feature_relevance_matrix:np.ndarray, scalers:dict=None) -> np.ndarray:
+    def _process_preferences(self, pref_str: str, feature_relevance_matrix: np.ndarray,
+                             scalers: dict = None) -> np.ndarray:
         # Input format: Two parts:
         #                - Preferences matrix survey answers (string). Importance on scale of 1-5, where 1 is least
         #                  and 5 is most important. Categories are: budget, performance, multi-tasking, gaming,
@@ -56,14 +58,14 @@ class UserRequest:
         #                                   -0.25]
         preferences_arr = list(map(int, pref_str.split(',')))
         preferences_scaled = np.array(preferences_arr).astype(np.float)
-        preferences_scaled[:8] = (preferences_scaled[:8] - 1) / 4 #scale first 8 components and leave the last 5 as boolean entries
+        preferences_scaled[:8] = (preferences_scaled[
+                                  :8] - 1) / 4  # scale first 8 components and leave the last 5 as boolean entries
 
-        feature_relevance = preferences_scaled@feature_relevance_matrix
+        feature_relevance = preferences_scaled @ feature_relevance_matrix
         feature_relevance_scaled = feature_relevance / 2 + .5
         return feature_relevance_scaled, preferences_scaled
 
-
-    def _process_constraints(self, constraints_str:str, scalers:dict=None) -> Constraints:
+    def _process_constraints(self, constraints_str: str, scalers: dict = None) -> Constraints:
         # Input format: string with multiple comma-separated key: value pairs of constraints. 
         # Input example: 'cpu_brand: Intel, gpu_brand: PreferNVIDIA, max_budget: 1000'
         # Output format: Constraints object

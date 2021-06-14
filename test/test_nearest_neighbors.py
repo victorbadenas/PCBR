@@ -11,7 +11,7 @@ class TestNeighbors(unittest.TestCase):
 
     def test_neighbors(self):
         N_features = 4
-        X = np.random.rand(3, 4)
+        X = np.random.rand(3, N_features)
         y = np.eye(3)  # one hot encoded labels
         clf = KNeighborsClassifier(1).fit(X, y)
         pred, distance_matrix = clf.predict(X)

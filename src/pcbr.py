@@ -44,31 +44,32 @@ def setup_logging():
     revise_logger.setLevel(logging.INFO)
     retain_logger.setLevel(logging.INFO)
 
+
 class PCBR:
-    def __init__(self, cbl_path: str ='../data/pc_specs.csv',
-                       cpu_path: str ='../data/cpu_table.csv',
-                       gpu_path: str ='../data/gpu_table.csv',
-                       ram_path: str ='../data/ram_table.csv',
-                       ssd_path: str ='../data/ssd_table.csv',
-                       hdd_path: str ='../data/hdd_table.csv',
-                       opt_drive_path: str ='../data/optical_drive_table.csv',
-                       feature_scalers_meta: str ='../data/feature_scalers.json',
-                       feature_relevance_path: str ='../data/feature_relevance.csv',
-                       output_retain_path: str ='../data/retained',
-                       output_saved_model_path: str ='../data/pcbr_stored'):
+    def __init__(self, cbl_path: str = '../data/pc_specs.csv',
+                 cpu_path: str = '../data/cpu_table.csv',
+                 gpu_path: str = '../data/gpu_table.csv',
+                 ram_path: str = '../data/ram_table.csv',
+                 ssd_path: str = '../data/ssd_table.csv',
+                 hdd_path: str = '../data/hdd_table.csv',
+                 opt_drive_path: str = '../data/optical_drive_table.csv',
+                 feature_scalers_meta: str = '../data/feature_scalers.json',
+                 feature_relevance_path: str = '../data/feature_relevance.csv',
+                 output_retain_path: str = '../data/retained',
+                 output_saved_model_path: str = '../data/pcbr_stored'):
 
         pcbr_logger.info('Initializing...')
         # 
         # read case library
-        case_library, self.transformations = read_initial_cbl(path=cbl_path, 
-            cpu_path=cpu_path,
-            gpu_path=gpu_path,
-            ram_path=ram_path,
-            ssd_path=ssd_path,
-            hdd_path=hdd_path,
-            opt_drive_path=opt_drive_path,
-            feature_scalers_meta=feature_scalers_meta
-        )
+        case_library, self.transformations = read_initial_cbl(path=cbl_path,
+                                                              cpu_path=cpu_path,
+                                                              gpu_path=gpu_path,
+                                                              ram_path=ram_path,
+                                                              ssd_path=ssd_path,
+                                                              hdd_path=hdd_path,
+                                                              opt_drive_path=opt_drive_path,
+                                                              feature_scalers_meta=feature_scalers_meta
+                                                              )
 
         # Split into "source" (preferences) and "target" (PC specs)
         self.target_attributes = case_library[case_library.columns[:7]]
@@ -125,7 +126,7 @@ class PCBR:
         Path(self.table_paths['output_saved_model']).parent.mkdir(exist_ok=True, parents=True)
         pcbr_logger.info('Initialization complete!')
 
-    def get_user_request(self, mock_file=None, mode='one_pass') -> UserRequest:
+    def get_user_request(self, mock_file=None, mode='one_pass') -> Union[UserRequest, None]:
 
         # Request input here and return it.
         # For now, appears "None" is handled well by retrieve step and it defaults to a case in the library
@@ -164,7 +165,6 @@ class PCBR:
             # return request built with mock request trings
             return UserRequest(*request_strings, self.transformations, self.feature_relevance_matrix)
         else:
-            # TODO: CLI request
             profile_str, pref_str, constraints_str = self.get_cli_requests()
             if profile_str is None or pref_str is None or constraints_str is None:
                 return None
@@ -177,7 +177,7 @@ class PCBR:
             )
             return user_req_rv
 
-    def set_input_profile(self, user_request:UserRequest):
+    def set_input_profile(self, user_request: UserRequest):
         self.input_profile = user_request.profile
         self.input_pref = user_request.preferences
         self.input_constraints = user_request.constraints
@@ -207,7 +207,8 @@ class PCBR:
         return profile_str, pref_str, constraints_str
 
     @staticmethod
-    def get_user_input(input_message_string:str, expected_format:Callable, exit_str:str='exit') -> Union[str, None]:
+    def get_user_input(input_message_string: str, expected_format: Callable, exit_str: str = 'exit') -> Union[
+        str, None]:
         user_input_string = input(input_message_string).strip()
         if user_input_string == exit_str:
             return None
@@ -333,7 +334,8 @@ class PCBR:
                     print(f'{idx} - {component}')
                 while True:
                     cli_input = input()
-                    if cli_input is not None and (cli_input.isdigit() and 0 <= int(cli_input) < len(remaining_components)):
+                    if cli_input is not None and (
+                            cli_input.isdigit() and 0 <= int(cli_input) < len(remaining_components)):
                         selected_component_idx = int(cli_input)
                         selected_component = remaining_components[selected_component_idx]
                         remaining_components.pop(selected_component_idx)
@@ -344,8 +346,10 @@ class PCBR:
                         latest_value = latest_solution[component_id]
                         all_values.remove(latest_value)
                         if len(all_values) > 0:
-                            selected_new_value = self.show_values_and_get_choice(selected_component, all_values, latest_value)
-                            difference = self.calculate_price_difference(selected_component, latest_value, selected_new_value)
+                            selected_new_value = self.show_values_and_get_choice(selected_component, all_values,
+                                                                                 latest_value)
+                            difference = self.calculate_price_difference(selected_component, latest_value,
+                                                                         selected_new_value)
                             latest_solution_price += difference
                             new_solution = latest_solution.copy()
                             new_solution[component_id] = selected_new_value
@@ -372,11 +376,11 @@ class PCBR:
 
     def extract_all_values_for_component(self, selected_component):
         components_map = {'CPU': (self.table_paths['cpu'], 'CPU Name'),
-                 'RAM (GB)': (self.table_paths['ram'], 'Capacity'),
-                 'SSD (GB)': (self.table_paths['ssd'], 'Capacity'),
-                 'HDD (GB)': (self.table_paths['hdd'], 'Capacity'),
-                 'GPU': (self.table_paths['gpu'], 'GPU Name'),
-                 'Optical Drive (1 = DVD; 0 = None)': (self.table_paths['opt_drive'], 'Boolean State')}
+                          'RAM (GB)': (self.table_paths['ram'], 'Capacity'),
+                          'SSD (GB)': (self.table_paths['ssd'], 'Capacity'),
+                          'HDD (GB)': (self.table_paths['hdd'], 'Capacity'),
+                          'GPU': (self.table_paths['gpu'], 'GPU Name'),
+                          'Optical Drive (1 = DVD; 0 = None)': (self.table_paths['opt_drive'], 'Boolean State')}
 
         df = read_table(components_map[selected_component][0], index_col=None)
         return df[components_map[selected_component][1]].values.tolist()
@@ -396,11 +400,12 @@ class PCBR:
 
     def calculate_price_difference(self, selected_component, latest_value, selected_new_value):
         components_map = {'CPU': (self.table_paths['cpu'], 'CPU Name', 'MSRP'),
-                 'RAM (GB)': (self.table_paths['ram'], 'Capacity', 'Price'),
-                 'SSD (GB)': (self.table_paths['ssd'], 'Capacity', 'Price'),
-                 'HDD (GB)': (self.table_paths['hdd'], 'Capacity', 'Price'),
-                 'GPU': (self.table_paths['gpu'], 'GPU Name', 'MSRP'),
-                 'Optical Drive (1 = DVD; 0 = None)': (self.table_paths['opt_drive'], 'Boolean State', 'Price')}
+                          'RAM (GB)': (self.table_paths['ram'], 'Capacity', 'Price'),
+                          'SSD (GB)': (self.table_paths['ssd'], 'Capacity', 'Price'),
+                          'HDD (GB)': (self.table_paths['hdd'], 'Capacity', 'Price'),
+                          'GPU': (self.table_paths['gpu'], 'GPU Name', 'MSRP'),
+                          'Optical Drive (1 = DVD; 0 = None)': (
+                              self.table_paths['opt_drive'], 'Boolean State', 'Price')}
         df = read_table(components_map[selected_component][0], index_col=None)
         old_row = df.loc[df[components_map[selected_component][1]] == latest_value]
         new_row = df.loc[df[components_map[selected_component][1]] == selected_new_value]
@@ -450,8 +455,8 @@ class PCBR:
         full_pred = full_knn.kneighbors([full_new_instance])
         full_pred_first_distance = full_pred[0][0][0]
         full_stats = self.extract_statistics(full_neigh, full_pred_first_distance,
-                                               full_data, [full_new_instance], n_neighbors, title='Problem + Solution',
-                                               plot_points=False, plot_pca=False)
+                                             full_data, [full_new_instance], n_neighbors, title='Problem + Solution',
+                                             plot_points=False, plot_pca=False)
 
         if verbose:
             print('\n---------------------------------------')
@@ -550,8 +555,8 @@ class PCBR:
     def plot_pca(self, dataset, instance, title):
         retained = dataset.shape[0] - self.number_of_base_instances
         if retained > 0:
-            labels = ['Base']*self.number_of_base_instances
-            retained = ['Retained']*retained
+            labels = ['Base'] * self.number_of_base_instances
+            retained = ['Retained'] * retained
             new_sol = [f'New {title}']
             labels.extend(retained)
             labels.extend(new_sol)
@@ -569,7 +574,8 @@ class PCBR:
         pca = PCA(n_components=2, random_state=7)
         df_2D = pd.DataFrame(pca.fit_transform(dataset), columns=['PCA1', 'PCA2'])
         df_2D['Instance type'] = labels
-        sn.lmplot(x="PCA1", y="PCA2", data=df_2D, fit_reg=False, hue='Instance type', legend=False, scatter_kws={"s": 25},
+        sn.lmplot(x="PCA1", y="PCA2", data=df_2D, fit_reg=False, hue='Instance type', legend=False,
+                  scatter_kws={"s": 25},
                   palette=colors)
         plt.legend(title='Instance type', loc='best')
         plt.title(plot_title)
@@ -577,8 +583,10 @@ class PCBR:
         plt.show()
 
     def save_new_solution(self, revised_solution):
-        self.update_dataset(self.input_profile, self.source_attributes.columns.tolist(), self.table_paths['retain_source'])
-        self.update_dataset(revised_solution, self.target_attributes.columns.tolist(), self.table_paths['retain_target'])
+        self.update_dataset(self.input_profile, self.source_attributes.columns.tolist(),
+                            self.table_paths['retain_source'])
+        self.update_dataset(revised_solution, self.target_attributes.columns.tolist(),
+                            self.table_paths['retain_target'])
 
     def update_dataset(self, revised_solution, columns, path):
         revised_solution = np.atleast_2d(revised_solution)
@@ -598,9 +606,9 @@ class PCBR:
             source_transf = []
             for column in source:
                 t = self.transformations[column]
-                source_transf.append(t["scaler"].inverse_transform([[source[column][0]]])[0,0])
+                source_transf.append(t["scaler"].inverse_transform([[source[column][0]]])[0, 0])
                 if "map" in t:
-                    inv_map = {v:k for k, v in t['map'].items()}
+                    inv_map = {v: k for k, v in t['map'].items()}
                     source_transf[-1] = inv_map[int(source_transf[-1])]
             source = pd.DataFrame([source_transf], columns=source.columns, index=source.index)
 
@@ -609,7 +617,7 @@ class PCBR:
             retained_instances[dropped_column] = self.new_instance_marker
 
             pc_specs = pd.read_csv(self.table_paths['cbl'], index_col=None)
-            pc_specs_max_id = pc_specs['ID'].max()+1
+            pc_specs_max_id = pc_specs['ID'].max() + 1
             retained_instances.insert(0, 'ID', list(range(pc_specs_max_id, pc_specs_max_id + target.shape[0])))
             pc_specs = pc_specs.append(retained_instances, ignore_index=True)
             pc_specs.to_csv(self.table_paths['output_saved_model'], index=False)
@@ -628,7 +636,7 @@ def run_pcbr():
         # starting time
         st = time.time()
 
-        user_request = pcbr.get_user_request() # cli
+        user_request = pcbr.get_user_request()  # cli
         # user_request = pcbr.get_user_request(mock_file='../data/mock_requests.tsv', mode='one_pass')  # mock_file
 
         if not isinstance(user_request, UserRequest):
@@ -638,11 +646,14 @@ def run_pcbr():
         # user_request is a UserRequest object, keep moving forward.
         n_neighbors = 3
         nearest_cases, distances = pcbr.retrieve(new_instance=user_request.profile,
-                                                 feature_weights=user_request.preferences, n_neighbors=n_neighbors)
+                                                 feature_weights=user_request.preferences,
+                                                 n_neighbors=n_neighbors)
         pcbr_logger.debug(nearest_cases)
         pcbr_logger.debug(nearest_cases.shape)
 
-        proposed_solution = pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances, user_request=user_request)
+        proposed_solution = pcbr.reuse(nearest_cases=nearest_cases[0],
+                                       distances=distances,
+                                       user_request=user_request)
 
         proc_time = time.time()
         revision_result = pcbr.revise(proposed_solution)
@@ -664,6 +675,7 @@ def plot_result(data, title, y_label):
     # plt.savefig(f'../data/{title.replace(' ', '_')}.png')
     plt.show()
 
+
 def run_generator(n_runs=1000):
     with open(f'../data/feature_scalers.json', 'r') as fp:
         scalers = json.load(fp)
@@ -675,11 +687,11 @@ def run_generator(n_runs=1000):
     preferences_max_values = [5, 5, 5, 5, 5, 5, 5, 5, 1, 1, 1, 1, 1]
 
     advanced_user = {'cpu_brand:': {0: 'Intel', 1: 'PreferIntel', 2: 'Idc', 3: 'PreferAMD', 4: 'AMD'},
-                        'gpu_brand:': {0: 'NVIDIA', 1: 'PreferNVIDIA', 2: 'Idc', 3: 'PreferAMD', 4: 'AMD'},
-                        'max_budget:': (scalers['Price (€)']['min'], scalers['Price (€)']['max']),
-                        'min_ram:': {0: 'Idc', 1: '16', 2: '32', 3: '64', 4: '128'},
-                        'optical_drive:': {0: 'no', 1: 'yes'}
-                        }
+                     'gpu_brand:': {0: 'NVIDIA', 1: 'PreferNVIDIA', 2: 'Idc', 3: 'PreferAMD', 4: 'AMD'},
+                     'max_budget:': (scalers['Price (€)']['min'], scalers['Price (€)']['max']),
+                     'min_ram:': {0: 'Idc', 1: '16', 2: '32', 3: '64', 4: '128'},
+                     'optical_drive:': {0: 'no', 1: 'yes'}
+                     }
 
     random.seed(42)
     generator_path = '../data/generator.tsv'
@@ -702,7 +714,7 @@ def run_generator(n_runs=1000):
             input_constraints = []
             for key, value in advanced_user.items():
                 if isinstance(value, dict):
-                    rnd = random.randint(0, len(value.keys())-1)
+                    rnd = random.randint(0, len(value.keys()) - 1)
                     val = value[rnd]
                 else:
                     val = str(random.randrange(value[0], value[1]))
@@ -735,7 +747,7 @@ def run_generator(n_runs=1000):
         if result is None:
             result = 0
         if run_i != 0:
-            prev_value = retained_count[len(retained_count)-1]
+            prev_value = retained_count[len(retained_count) - 1]
         else:
             prev_value = 0
         retained_count.append(prev_value + result)

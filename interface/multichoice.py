@@ -13,12 +13,13 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
+
 class MultiChoiceDialog(QDialog):
     def setupUi(self, Dialog, options, title="Dialog", size=(322, 280)):
         self.Dialog = Dialog
 
         self.Dialog.setObjectName(title)
-        self.Dialog.resize(*size)
+        self.Dialog.setFixedSize(*size)
 
         self.options = options
         self.size = size
@@ -70,8 +71,10 @@ class MultiChoiceDialog(QDialog):
                 self.Dialog.close()
                 break
 
+
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     Dialog = QtWidgets.QDialog()
     ui = MultiChoiceDialog()

@@ -22,10 +22,11 @@ app_logger = logging.getLogger('app')
 pd.set_option('max_columns', None)
 pd.set_option('display.expand_frame_repr', False)
 
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(846, 668)
+        MainWindow.setFixedSize(846, 668)
         self.center(MainWindow)
 
         self.radio_groups = dict()
@@ -67,7 +68,8 @@ class Ui_MainWindow(object):
         self.radioButton_20 = QtWidgets.QRadioButton(self.groupBox_5)
         self.radioButton_20.setGeometry(QtCore.QRect(420, 20, 100, 21))
         self.radioButton_20.setObjectName("radioButton_20")
-        self.radio_groups["replace_frequency"] = [self.radioButton_17, self.radioButton_18, self.radioButton_19, self.radioButton_20]
+        self.radio_groups["replace_frequency"] = [self.radioButton_17, self.radioButton_18, self.radioButton_19,
+                                                  self.radioButton_20]
         self.radio_groups_values["replace_frequency"] = [1, 2, 3, 4]
 
         # What is your experience level with computers?
@@ -75,15 +77,15 @@ class Ui_MainWindow(object):
         self.groupBox.setGeometry(QtCore.QRect(30, 10, 671, 171))
         self.groupBox.setObjectName("groupBox")
         self.layoutWidget = QtWidgets.QWidget(self.groupBox)
-        self.layoutWidget.setGeometry(QtCore.QRect(60, 30, 186, 131))
+        self.layoutWidget.setGeometry(QtCore.QRect(30, 30, 200, 131))
         self.layoutWidget.setObjectName("layoutWidget")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.layoutWidget)
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-        # My name is Linus Torvalds
-        self.radioButton_5 = QtWidgets.QRadioButton(self.layoutWidget)
-        self.radioButton_5.setObjectName("radioButton_5")
-        self.verticalLayout_2.addWidget(self.radioButton_5)
+        # They scare me
+        self.radioButton = QtWidgets.QRadioButton(self.layoutWidget)
+        self.radioButton.setObjectName("radioButton")
+        self.verticalLayout_2.addWidget(self.radioButton)
         # Novice
         self.radioButton_2 = QtWidgets.QRadioButton(self.layoutWidget)
         self.radioButton_2.setObjectName("radioButton_2")
@@ -96,11 +98,12 @@ class Ui_MainWindow(object):
         self.radioButton_4 = QtWidgets.QRadioButton(self.layoutWidget)
         self.radioButton_4.setObjectName("radioButton_4")
         self.verticalLayout_2.addWidget(self.radioButton_4)
-        # They scare me
-        self.radioButton = QtWidgets.QRadioButton(self.layoutWidget)
-        self.radioButton.setObjectName("radioButton")
-        self.verticalLayout_2.addWidget(self.radioButton)
-        self.radio_groups["experience"] = [self.radioButton, self.radioButton_2, self.radioButton_3, self.radioButton_4, self.radioButton_5]
+        # My name is Linus Torvalds
+        self.radioButton_5 = QtWidgets.QRadioButton(self.layoutWidget)
+        self.radioButton_5.setObjectName("radioButton_5")
+        self.verticalLayout_2.addWidget(self.radioButton_5)
+        self.radio_groups["experience"] = [self.radioButton, self.radioButton_2, self.radioButton_3, self.radioButton_4,
+                                           self.radioButton_5]
         self.radio_groups_values["experience"] = [1, 2, 3, 4, 5]
 
         # What is your budget?
@@ -127,7 +130,7 @@ class Ui_MainWindow(object):
         self.groupBox_3.setGeometry(QtCore.QRect(30, 240, 671, 201))
         self.groupBox_3.setObjectName("groupBox_3")
         self.layoutWidget1 = QtWidgets.QWidget(self.groupBox_3)
-        self.layoutWidget1.setGeometry(QtCore.QRect(30, 30, 225, 158))
+        self.layoutWidget1.setGeometry(QtCore.QRect(30, 30, 250, 158))
         self.layoutWidget1.setObjectName("layoutWidget1")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.layoutWidget1)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -156,7 +159,8 @@ class Ui_MainWindow(object):
         self.radioButton_12 = QtWidgets.QRadioButton(self.layoutWidget1)
         self.radioButton_12.setObjectName("radioButton_12")
         self.verticalLayout.addWidget(self.radioButton_12)
-        self.radio_groups["primary_use"] = [self.radioButton_8, self.radioButton_11, self.radioButton_10, self.radioButton_12, self.radioButton_13, self.radioButton_23]
+        self.radio_groups["primary_use"] = [self.radioButton_8, self.radioButton_11, self.radioButton_10,
+                                            self.radioButton_12, self.radioButton_13, self.radioButton_23]
         self.radio_groups_values["primary_use"] = ['Home', 'Work', 'Gaming', 'Production', 'ML', 'Programming']
 
         # Home, Work, Gaming, Production, ML, Programming
@@ -173,7 +177,7 @@ class Ui_MainWindow(object):
         self.radioButton_24.setGeometry(QtCore.QRect(346, 20, 100, 21))
         self.radioButton_24.setObjectName("radioButton_24")
         self.radio_groups["optical_drive"] = [self.radioButton_25, self.radioButton_24]
-        self.radio_groups_values["optical_drive"] = ['No', 'Yes']
+        self.radio_groups_values["optical_drive"] = ['no', 'yes']
 
         # Are you currently working from home?
         self.groupBox_2 = QtWidgets.QGroupBox(self.tab)
@@ -220,9 +224,10 @@ class Ui_MainWindow(object):
         self.radioButton_47.setText("")
         self.radioButton_47.setObjectName("radioButton_47")
         self.horizontalLayout_5.addWidget(self.radioButton_47)
-        self.radio_groups["gaming"] = [self.radioButton_43, self.radioButton_44, self.radioButton_45, self.radioButton_46, self.radioButton_47]
+        self.radio_groups["gaming"] = [self.radioButton_43, self.radioButton_44, self.radioButton_45,
+                                       self.radioButton_46, self.radioButton_47]
         self.radio_groups_values["gaming"] = [1, 2, 3, 4, 5]
-        
+
         self.layoutWidget3 = QtWidgets.QWidget(self.tab_2)
         self.layoutWidget3.setGeometry(QtCore.QRect(180, 266, 526, 23))
         self.layoutWidget3.setObjectName("layoutWidget3")
@@ -248,7 +253,8 @@ class Ui_MainWindow(object):
         self.radioButton_67 = QtWidgets.QRadioButton(self.layoutWidget3)
         self.radioButton_67.setText("")
         self.radioButton_67.setObjectName("radioButton_67")
-        self.radio_groups["videochat"] = [self.radioButton_63, self.radioButton_64, self.radioButton_65, self.radioButton_66, self.radioButton_67]
+        self.radio_groups["videochat"] = [self.radioButton_63, self.radioButton_64, self.radioButton_65,
+                                          self.radioButton_66, self.radioButton_67]
         self.radio_groups_values["videochat"] = [1, 2, 3, 4, 5]
 
         self.horizontalLayout_9.addWidget(self.radioButton_67)
@@ -278,7 +284,8 @@ class Ui_MainWindow(object):
         self.radioButton_57.setText("")
         self.radioButton_57.setObjectName("radioButton_57")
         self.horizontalLayout_7.addWidget(self.radioButton_57)
-        self.radio_groups["editing"] = [self.radioButton_53, self.radioButton_54, self.radioButton_55, self.radioButton_56, self.radioButton_57]
+        self.radio_groups["editing"] = [self.radioButton_53, self.radioButton_54, self.radioButton_55,
+                                        self.radioButton_56, self.radioButton_57]
         self.radio_groups_values["editing"] = [1, 2, 3, 4, 5]
 
         self.layoutWidget5 = QtWidgets.QWidget(self.tab_2)
@@ -307,7 +314,8 @@ class Ui_MainWindow(object):
         self.radioButton_27.setText("")
         self.radioButton_27.setObjectName("radioButton_27")
         self.horizontalLayout.addWidget(self.radioButton_27)
-        self.radio_groups["budget_2"] = [self.radioButton_7, self.radioButton_6, self.radioButton_9, self.radioButton_26, self.radioButton_27]
+        self.radio_groups["budget_2"] = [self.radioButton_7, self.radioButton_6, self.radioButton_9,
+                                         self.radioButton_26, self.radioButton_27]
         self.radio_groups_values["budget_2"] = [1, 2, 3, 4, 5]
 
         self.layoutWidget6 = QtWidgets.QWidget(self.tab_2)
@@ -336,7 +344,8 @@ class Ui_MainWindow(object):
         self.radioButton_42.setText("")
         self.radioButton_42.setObjectName("radioButton_42")
         self.horizontalLayout_4.addWidget(self.radioButton_42)
-        self.radio_groups["multi-tasking"] = [self.radioButton_38, self.radioButton_39, self.radioButton_40, self.radioButton_41, self.radioButton_42]
+        self.radio_groups["multi-tasking"] = [self.radioButton_38, self.radioButton_39, self.radioButton_40,
+                                              self.radioButton_41, self.radioButton_42]
         self.radio_groups_values["multi-tasking"] = [1, 2, 3, 4, 5]
 
         self.layoutWidget7 = QtWidgets.QWidget(self.tab_2)
@@ -365,7 +374,8 @@ class Ui_MainWindow(object):
         self.radioButton_62.setText("")
         self.radioButton_62.setObjectName("radioButton_62")
         self.horizontalLayout_8.addWidget(self.radioButton_62)
-        self.radio_groups["startup"] = [self.radioButton_58, self.radioButton_59, self.radioButton_60, self.radioButton_61, self.radioButton_62]
+        self.radio_groups["startup"] = [self.radioButton_58, self.radioButton_59, self.radioButton_60,
+                                        self.radioButton_61, self.radioButton_62]
         self.radio_groups_values["startup"] = [1, 2, 3, 4, 5]
 
         self.layoutWidget8 = QtWidgets.QWidget(self.tab_2)
@@ -394,9 +404,10 @@ class Ui_MainWindow(object):
         self.radioButton_52.setText("")
         self.radioButton_52.setObjectName("radioButton_52")
         self.horizontalLayout_6.addWidget(self.radioButton_52)
-        self.radio_groups["streaming"] = [self.radioButton_48, self.radioButton_49, self.radioButton_50, self.radioButton_51, self.radioButton_52]
+        self.radio_groups["streaming"] = [self.radioButton_48, self.radioButton_49, self.radioButton_50,
+                                          self.radioButton_51, self.radioButton_52]
         self.radio_groups_values["streaming"] = [1, 2, 3, 4, 5]
-        
+
         self.layoutWidget9 = QtWidgets.QWidget(self.tab_2)
         self.layoutWidget9.setGeometry(QtCore.QRect(180, 92, 526, 23))
         self.layoutWidget9.setObjectName("layoutWidget9")
@@ -423,7 +434,8 @@ class Ui_MainWindow(object):
         self.radioButton_37.setText("")
         self.radioButton_37.setObjectName("radioButton_37")
         self.horizontalLayout_3.addWidget(self.radioButton_37)
-        self.radio_groups["performance"] = [self.radioButton_33, self.radioButton_34, self.radioButton_35, self.radioButton_36, self.radioButton_37]
+        self.radio_groups["performance"] = [self.radioButton_33, self.radioButton_34, self.radioButton_35,
+                                            self.radioButton_36, self.radioButton_37]
         self.radio_groups_values["performance"] = [1, 2, 3, 4, 5]
 
         self.layoutWidget10 = QtWidgets.QWidget(self.tab_2)
@@ -432,36 +444,42 @@ class Ui_MainWindow(object):
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.layoutWidget10)
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
+        self.layoutWidgetheader = QtWidgets.QWidget(self.tab_2)
+        self.layoutWidgetheader.setGeometry(QtCore.QRect(5, 5, 400, 25))
+        self.layoutWidgetheader.setObjectName("layoutWidgetheader")
+        self.label_header = QtWidgets.QLabel(self.layoutWidgetheader)
+        self.label_header.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
+        self.label_header.setObjectName("label_header")
         self.label = QtWidgets.QLabel(self.layoutWidget10)
-        self.label.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.label.setObjectName("label")
         self.verticalLayout_3.addWidget(self.label)
         self.label_2 = QtWidgets.QLabel(self.layoutWidget10)
-        self.label_2.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_2.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.label_2.setObjectName("label_2")
         self.verticalLayout_3.addWidget(self.label_2)
         self.label_3 = QtWidgets.QLabel(self.layoutWidget10)
-        self.label_3.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_3.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.label_3.setObjectName("label_3")
         self.verticalLayout_3.addWidget(self.label_3)
         self.label_4 = QtWidgets.QLabel(self.layoutWidget10)
-        self.label_4.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_4.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.label_4.setObjectName("label_4")
         self.verticalLayout_3.addWidget(self.label_4)
         self.label_5 = QtWidgets.QLabel(self.layoutWidget10)
-        self.label_5.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_5.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.label_5.setObjectName("label_5")
         self.verticalLayout_3.addWidget(self.label_5)
         self.label_6 = QtWidgets.QLabel(self.layoutWidget10)
-        self.label_6.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_6.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.label_6.setObjectName("label_6")
         self.verticalLayout_3.addWidget(self.label_6)
         self.label_7 = QtWidgets.QLabel(self.layoutWidget10)
-        self.label_7.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_7.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.label_7.setObjectName("label_7")
         self.verticalLayout_3.addWidget(self.label_7)
         self.label_8 = QtWidgets.QLabel(self.layoutWidget10)
-        self.label_8.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_8.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.label_8.setObjectName("label_8")
         self.verticalLayout_3.addWidget(self.label_8)
         self.layoutWidget11 = QtWidgets.QWidget(self.tab_2)
@@ -489,7 +507,7 @@ class Ui_MainWindow(object):
         self.groupBox_7.setGeometry(QtCore.QRect(10, 320, 691, 201))
         self.groupBox_7.setObjectName("groupBox_7")
         self.layoutWidget12 = QtWidgets.QWidget(self.groupBox_7)
-        self.layoutWidget12.setGeometry(QtCore.QRect(20, 40, 633, 131))
+        self.layoutWidget12.setGeometry(QtCore.QRect(20, 40, 633, 150))
         self.layoutWidget12.setObjectName("layoutWidget12")
         self.verticalLayout_4 = QtWidgets.QVBoxLayout(self.layoutWidget12)
         self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
@@ -517,8 +535,9 @@ class Ui_MainWindow(object):
         self.checkBox_7 = QtWidgets.QCheckBox(self.layoutWidget12)
         self.checkBox_7.setObjectName("checkBox_7")
         self.verticalLayout_4.addWidget(self.checkBox_7)
-        self.application_checkboxes = [self.checkBox, self.checkBox_6, self.checkBox_7, self.checkBox_2, self.checkBox_3, self.checkBox_4, self.checkBox_5]
-    
+        self.application_checkboxes = [self.checkBox, self.checkBox_6, self.checkBox_7, self.checkBox_2,
+                                       self.checkBox_3, self.checkBox_4, self.checkBox_5]
+
         self.tabWidget.addTab(self.tab_2, "")
         self.tab_3 = QtWidgets.QWidget()
         self.tab_3.setObjectName("tab_3")
@@ -543,9 +562,10 @@ class Ui_MainWindow(object):
         self.radioButton_75 = QtWidgets.QRadioButton(self.layoutWidget13)
         self.radioButton_75.setObjectName("radioButton_75")
         self.horizontalLayout_11.addWidget(self.radioButton_75)
-        self.radio_groups["cpu_pref"] = [self.radioButton_73, self.radioButton_74, self.radioButton_77, self.radioButton_76, self.radioButton_75]
-        self.radio_groups_values["cpu_pref"] = ['Intel', 'PreferIntel', 'Idc', 'PreferAMD', 'AMD']
-        
+        self.radio_groups["cpu_brand"] = [self.radioButton_73, self.radioButton_74, self.radioButton_77,
+                                         self.radioButton_76, self.radioButton_75]
+        self.radio_groups_values["cpu_brand"] = ['Intel', 'PreferIntel', 'Idc', 'PreferAMD', 'AMD']
+
         self.label_14 = QtWidgets.QLabel(self.tab_3)
         self.label_14.setGeometry(QtCore.QRect(40, 72, 94, 16))
         self.label_14.setObjectName("label_14")
@@ -572,9 +592,10 @@ class Ui_MainWindow(object):
         self.horizontalLayout_12.addWidget(self.radioButton_81)
         self.radioButton_82 = QtWidgets.QRadioButton(self.layoutWidget_2)
         self.radioButton_82.setObjectName("radioButton_82")
-        self.radio_groups["gpu_pref"] = [self.radioButton_78, self.radioButton_79, self.radioButton_80, self.radioButton_81, self.radioButton_82]
-        self.radio_groups_values["gpu_pref"] = ['NVIDIA', 'PreferNVIDIA', 'Idc', 'PreferAMD', 'AMD']
-        
+        self.radio_groups["gpu_brand"] = [self.radioButton_78, self.radioButton_79, self.radioButton_80,
+                                         self.radioButton_81, self.radioButton_82]
+        self.radio_groups_values["gpu_brand"] = ['NVIDIA', 'PreferNVIDIA', 'Idc', 'PreferAMD', 'AMD']
+
         self.horizontalLayout_12.addWidget(self.radioButton_82)
         self.groupBox_8 = QtWidgets.QGroupBox(self.tab_3)
         self.groupBox_8.setGeometry(QtCore.QRect(20, 250, 671, 201))
@@ -599,15 +620,16 @@ class Ui_MainWindow(object):
         self.verticalLayout_5.addWidget(self.radioButton_71)
         self.radioButton_72 = QtWidgets.QRadioButton(self.layoutWidget14)
         self.radioButton_72.setObjectName("radioButton_72")
-        self.radio_groups["min_ram"] = [self.radioButton_68, self.radioButton_69, self.radioButton_70, self.radioButton_71, self.radioButton_72]
+        self.radio_groups["min_ram"] = [self.radioButton_68, self.radioButton_69, self.radioButton_70,
+                                        self.radioButton_71, self.radioButton_72]
         self.radio_groups_values["min_ram"] = ['Idc', '16', '32', '64', '128']
 
         self.verticalLayout_5.addWidget(self.radioButton_72)
-        self.textEdit = QtWidgets.QTextEdit(self.tab_3)
-        self.textEdit.setGeometry(QtCore.QRect(150, 470, 221, 31))
+        self.textEdit = QtWidgets.QTextEdit(self.tab_2)
+        self.textEdit.setGeometry(QtCore.QRect(150, 550, 221, 31))
         self.textEdit.setObjectName("textEdit")
-        self.label_16 = QtWidgets.QLabel(self.tab_3)
-        self.label_16.setGeometry(QtCore.QRect(20, 476, 111, 16))
+        self.label_16 = QtWidgets.QLabel(self.tab_2)
+        self.label_16.setGeometry(QtCore.QRect(20, 550, 111, 25))
         self.label_16.setObjectName("label_16")
         self.tabWidget.addTab(self.tab_3, "")
         MainWindow.setCentralWidget(self.centralwidget)
@@ -638,10 +660,12 @@ class Ui_MainWindow(object):
 
         for k, v in self.__dict__.items():
             if "radioButton" in k:
-                v.clicked.connect(self.msgbtn)
-                
+                v.clicked.connect(self.checkPushButton)
+
         for cb in self.application_checkboxes:
-            cb.clicked.connect(self.msgbtn)
+            cb.clicked.connect(self.checkPushButton)
+
+        self.textEdit.textChanged.connect(self.checkPushButton)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -676,13 +700,14 @@ class Ui_MainWindow(object):
         self.radioButton_22.setText(_translate("MainWindow", "No"))
         self.radioButton_21.setText(_translate("MainWindow", "Yes"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "Basic"))
+        self.label_header.setText(_translate("MainWindow", "How important is each of the following items to you?"))
         self.label.setText(_translate("MainWindow", "Budget"))
         self.label_2.setText(_translate("MainWindow", "Performance"))
         self.label_3.setText(_translate("MainWindow", "Multi-tasking"))
         self.label_4.setText(_translate("MainWindow", "Gaming"))
         self.label_5.setText(_translate("MainWindow", "Streaming videos"))
-        self.label_6.setText(_translate("MainWindow", "Editing videos/photos/music"))
-        self.label_7.setText(_translate("MainWindow", "Fast startup/shutdown time"))
+        self.label_6.setText(_translate("MainWindow", "Editing photos/music"))
+        self.label_7.setText(_translate("MainWindow", "Fast startup/shutdown"))
         self.label_8.setText(_translate("MainWindow", "Video chat"))
         self.label_9.setText(_translate("MainWindow", "Not at all"))
         self.label_10.setText(_translate("MainWindow", "Little"))
@@ -693,31 +718,36 @@ class Ui_MainWindow(object):
         self.checkBox.setText(_translate("MainWindow", "Microsoft Office Suite"))
         self.checkBox_2.setText(_translate("MainWindow", "Tensorflow/PyTorch/Keras"))
         self.checkBox_3.setText(_translate("MainWindow", "Compilers"))
-        self.checkBox_4.setText(_translate("MainWindow", "High-performance games: Resident Evil Village, Witcher 3, World of Warcraft, Red Dead Redemption"))
+        self.checkBox_4.setText(_translate("MainWindow",
+                                           "High-performance games: Resident Evil Village, Witcher 3, World of Warcraft, Red Dead Redemption"))
         self.checkBox_5.setText(_translate("MainWindow", "Low-performance games: Minecraft, Fortnite: Battle Royale"))
         self.checkBox_6.setText(_translate("MainWindow", "Photoshop"))
         self.checkBox_7.setText(_translate("MainWindow", "Videochat"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Preferences"))
         self.radioButton_73.setText(_translate("MainWindow", "Must be Intel"))
-        self.radioButton_74.setText(_translate("MainWindow", "Prefer Intel"))
-        self.radioButton_77.setText(_translate("MainWindow", "No preference"))
-        self.radioButton_76.setText(_translate("MainWindow", "Prefer AMD"))
+        self.radioButton_74.setText(_translate("MainWindow", "Pref. Intel"))
+        self.radioButton_77.setText(_translate("MainWindow", "No pref."))
+        self.radioButton_77.setChecked(True)
+        self.radioButton_76.setText(_translate("MainWindow", "Pref. AMD"))
         self.radioButton_75.setText(_translate("MainWindow", "Must be AMD"))
-        self.label_14.setText(_translate("MainWindow", "CPU Preference"))
-        self.label_15.setText(_translate("MainWindow", "GPU Preference"))
+        self.label_14.setText(_translate("MainWindow", "CPU Pref."))
+        self.label_15.setText(_translate("MainWindow", "GPU Pref."))
         self.radioButton_78.setText(_translate("MainWindow", "Must be NVIDIA"))
-        self.radioButton_79.setText(_translate("MainWindow", "Prefer NVIDIA"))
-        self.radioButton_80.setText(_translate("MainWindow", "No preference"))
-        self.radioButton_81.setText(_translate("MainWindow", "Prefer Radeon"))
+        self.radioButton_79.setText(_translate("MainWindow", "Pref. NVIDIA"))
+        self.radioButton_80.setText(_translate("MainWindow", "No pref."))
+        self.radioButton_80.setChecked(True)
+        self.radioButton_81.setText(_translate("MainWindow", "Pref. Radeon"))
         self.radioButton_82.setText(_translate("MainWindow", "Must be Radeon"))
         self.groupBox_8.setTitle(_translate("MainWindow", "Minimum RAM size"))
         self.radioButton_68.setText(_translate("MainWindow", "No minimum"))
+        self.radioButton_68.setChecked(True)
         self.radioButton_69.setText(_translate("MainWindow", "16 GB"))
         self.radioButton_70.setText(_translate("MainWindow", "32 GB"))
         self.radioButton_71.setText(_translate("MainWindow", "64 GB"))
         self.radioButton_72.setText(_translate("MainWindow", "128 GB"))
-        self.label_16.setText(_translate("MainWindow", "Maximum budget"))
+        self.label_16.setText(_translate("MainWindow", "Max. budget"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Advanced"))
+        self.pushButton.setEnabled(False)
 
     def center(self, MainWindow):
         qr = MainWindow.frameGeometry()
@@ -753,7 +783,6 @@ class Ui_MainWindow(object):
 
         return ', '.join(values)
 
-
     def build_pref_str(self):
         keys = ['budget_2', 'performance', 'multi-tasking', 'gaming', 'streaming', 'editing', 'startup', 'videochat']
         values = []
@@ -772,7 +801,7 @@ class Ui_MainWindow(object):
         return ', '.join(values)
 
     def build_constraints_str(self):
-        keys = ['cpu_pref', 'gpu_pref', 'min_ram', 'optical_drive']
+        keys = ['cpu_brand', 'gpu_brand', 'min_ram', 'optical_drive']
         values = []
         for key in keys:
             for idx, rb in enumerate(self.radio_groups[key]):
@@ -823,11 +852,13 @@ class Ui_MainWindow(object):
         app_logger.info(f'user_request: {user_request}')
 
         st = time.time()
-        nearest_cases, distances = self.pcbr.retrieve(new_instance=user_request.profile, feature_weights=user_request.preferences, n_neighbors=3)        
+        nearest_cases, distances = self.pcbr.retrieve(new_instance=user_request.profile,
+                                                      feature_weights=user_request.preferences, n_neighbors=3)
 
         app_logger.info(f'found nearest_cases: {nearest_cases}')
 
-        proposed_solution = self.pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances, user_request=user_request)
+        proposed_solution = self.pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances,
+                                            user_request=user_request)
 
         proc_time = time.time()
         rev_ret_time = time.time()
@@ -837,7 +868,8 @@ class Ui_MainWindow(object):
             self.pcbr.retain(revision_result, user_request.profile, n_neighbors=3)
             self.pcbr.save_model()
 
-        app_logger.info(f'time for processing an instance {proc_time - st:.2f}s, time for revision and {rev_ret_time - st:.2f}s')
+        app_logger.info(
+            f'time for processing an instance {proc_time - st:.2f}s, time for revision and {rev_ret_time - st:.2f}s')
 
     def revise(self, proposed_solution):
         proposed_solutions = [proposed_solution]
@@ -866,9 +898,9 @@ class Ui_MainWindow(object):
             satisfactory = False
             while len(remaining_components) > 0 and not satisfactory:
                 selected_component_idx = self.ask_radio_options(
-                    remaining_components, 
+                    remaining_components,
                     title='Select one component type between the following ones:',
-                    size=(400, 350) # TODO: resize
+                    size=(400, 350)  # TODO: resize
                 )
                 selected_component = remaining_components[selected_component_idx]
                 remaining_components.pop(selected_component_idx)
@@ -881,7 +913,8 @@ class Ui_MainWindow(object):
                 if len(all_values) > 0:
                     selected_new_value = self.show_values_and_get_choice(selected_component, all_values)
                     app_logger.info(f'Selected {selected_new_value}')
-                    difference = self.pcbr.calculate_price_difference(selected_component, latest_value, selected_new_value)
+                    difference = self.pcbr.calculate_price_difference(selected_component, latest_value,
+                                                                      selected_new_value)
                     latest_solution_price += difference
                     new_solution = latest_solution.copy()
                     new_solution[component_id] = selected_new_value
@@ -891,10 +924,11 @@ class Ui_MainWindow(object):
                     # TODO: QMessageBox
                     app_logger.info('Sorry but the chosen component has not valid alternatives!')
                     app_logger.info('\nSelect one component number between the following ones:')
-            
+
                 index.append(len(index))
                 if len(remaining_components) > 0:
-                    satisfactory = not self.print_solutions(proposed_solutions, components, index, text="Would you like to change something more (n/y)?")
+                    satisfactory = not self.print_solutions(proposed_solutions, components, index,
+                                                            text="Would you like to change something more (n/y)?")
                 else:
                     satisfactory = True
             return self.ask_which_solution_is_final(proposed_solutions, components, index)
@@ -922,9 +956,10 @@ class Ui_MainWindow(object):
         if return_value is None:
             self.Dialog.close()
         return proposed_solutions[return_value]
-    
+
     def show_values_and_get_choice(self, selected_component, all_values):
-        selected_component_idx = self.ask_radio_options(all_values, title=f'Select one {selected_component} type between the following ones:')
+        selected_component_idx = self.ask_radio_options(all_values,
+                                                        title=f'Select one {selected_component} type between the following ones:')
         return all_values[selected_component_idx]
 
     def ask_radio_options(self, options, title="", size=(322, 280)):
@@ -940,7 +975,7 @@ class Ui_MainWindow(object):
         columns = list(columns)
         columns[-2] = "Optical Drive"
         dataframe = pd.DataFrame(proposed_solutions, columns=columns, index=index)
-        
+
         if text is None:
             if len(index) == 1:
                 text = "The proposed solution is the following. Is the solution acceptable?:"
@@ -969,7 +1004,7 @@ class Ui_MainWindow(object):
         returnValue = qbox.exec()
         return returnValue == QtWidgets.QMessageBox.Yes
 
-    def msgbtn(self, i):
+    def checkPushButton(self):
         pressed = ""
         for k, v in self.__dict__.items():
             if "radioButton" in k:
@@ -979,9 +1014,15 @@ class Ui_MainWindow(object):
             if cb.isChecked():
                 pressed += cb.text() + ", "
         app_logger.debug(pressed)
+        if self.check_all_correct():
+            self.pushButton.setEnabled(True)
+        else:
+            self.pushButton.setEnabled(False)
+
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()

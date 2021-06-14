@@ -1,16 +1,18 @@
 def represents_int(s):
-    try: 
+    try:
         int(s)
         return True
     except ValueError:
         return False
 
+
 def represents_float(s):
-    try: 
+    try:
         float(s)
         return True
     except ValueError:
         return False
+
 
 def str_to_dict(s, sep=","):
     d = dict()
