@@ -21,6 +21,7 @@ from neighbors.nn import NearestNeighbors
 from adapt_pc import AdaptPC
 from user_request import UserRequest
 from sklearn.decomposition import PCA
+import random, json
 
 # Logger objects
 pcbr_logger = logging.getLogger('pcbr')
@@ -431,7 +432,7 @@ class PCBR:
             else:
                 print(f'Invalid choice: {cli_input}')
 
-    def retain(self, revised_solution=None, user_profile=None, n_neighbors=3):
+    def retain(self, revised_solution=None, user_profile=None, n_neighbors=3, verbose=True):
         assert revised_solution is not None
 
         numeric_revised_solution = self.adapt_pc.from_pc_to_numeric(revised_solution)
@@ -449,24 +450,30 @@ class PCBR:
         full_pred_first_distance = full_pred[0][0][0]
         full_stats = self.extract_statistics(full_neigh, full_pred_first_distance,
                                                full_data, [full_new_instance], n_neighbors, title='Problem + Solution',
-                                               plot_points=True, plot_pca=True)
+                                               plot_points=False, plot_pca=False)
 
-        print('\n---------------------------------------')
+        if verbose:
+            print('\n---------------------------------------')
         pcbr_logger.debug(f"Distance to the closest point from the prediction for source: {full_pred_first_distance}")
         pcbr_logger.debug(f"Full Problems+Solutions STATISTICS")
         pcbr_logger.debug(full_stats[0].head(), '\n')
 
         if full_pred_first_distance <= full_stats[0]['25%'][0]:
-            print("The proposed solution has NOT been stored!")
+            if verbose:
+                print("The proposed solution has NOT been stored!")
+                return 0
         else:
-            print("The proposed solution has been stored!")
+            if verbose:
+                print("The proposed solution has been stored!")
             df_user_profile = pd.DataFrame(user_profile, columns=source.columns.tolist())
             df_revised_solution = pd.DataFrame([numeric_revised_solution], columns=target.columns.tolist())
             # Adding source and target numerical solution to our data in memory
             self.source_attributes = self.source_attributes.append(df_user_profile, ignore_index=True)
             self.target_attributes = self.target_attributes.append(df_revised_solution, ignore_index=True)
             self.save_new_solution(revised_solution)
-        print('---------------------------------------\n')
+            return 1
+        if verbose:
+            print('---------------------------------------\n')
 
     def extract_statistics(self, neigh, pred, dataset, instance, n_neighbors, plot_points=False,
                            plot_pca=False, title='###'):
@@ -646,8 +653,83 @@ def run_pcbr():
         pcbr_logger.info(
             f'time for processing an instance {proc_time - st:.2f}s, time for revision and {rev_ret_time - st:.2f}s')
 
-def run_generator(n_runs = 1000):
-    print(f'Yosha! I am a generator ssj{n_runs}!')
+
+def run_generator(n_runs=1000):
+    with open(f'../data/feature_scalers.json', 'r') as fp:
+        scalers = json.load(fp)
+
+    user_profile_pref = ['Experience', 'WFH', 'Primary use', 'Budget', 'Replace (1-most frequent; 4-least frequent)',
+                         'Office', 'Photoshop', 'VideoChat', 'ML', 'Compilers',
+                         'HighPerformanceGames', 'LowPerformanceGames']
+
+    preferences_max_values = [5, 5, 5, 5, 5, 5, 5, 5, 1, 1, 1, 1, 1]
+
+    advanced_user = {'cpu_brand:': {0: 'Intel', 1: 'PreferIntel', 2: 'Idc', 3: 'PreferAMD', 4: 'AMD'},
+                        'gpu_brand:': {0: 'NVIDIA', 1: 'PreferNVIDIA', 2: 'Idc', 3: 'PreferAMD', 4: 'AMD'},
+                        'max_budget:': (scalers['Price (€)']['min'], scalers['Price (€)']['max']),
+                        'min_ram:': {0: 'Idc', 1: '16', 2: '32', 3: '64', 4: '128'},
+                        'optical_drive:': {0: 'no', 1: 'yes'}
+                        }
+    generator_path = '../data/generator.tsv'
+    with open(generator_path, 'w') as f:
+        for run_i in range(n_runs):
+            input_profile = []
+            for key in user_profile_pref:
+                scale = scalers[key]
+                rnd = random.randint(scale['min'], scale['max'])
+                if key == 'Primary use':
+                    map = scale['map']
+                    rnd = list(map.keys())[list(map.values()).index(rnd)]
+                input_profile.append(str(rnd))
+
+            input_pref = []
+            for max_val in preferences_max_values:
+                rnd = random.randint(0, max_val)
+                input_pref.append(str(rnd))
+
+            input_constraints = []
+            for key, value in advanced_user.items():
+                if isinstance(value, dict):
+                    rnd = random.randint(0, len(value.keys())-1)
+                    val = value[rnd]
+                else:
+                    val = str(random.randrange(value[0], value[1]))
+                rnd = key + ' ' + val
+                input_constraints.append(rnd)
+
+            print(', '.join(input_profile), file=f, end='\t')
+            print(', '.join(input_pref), file=f, end='\t')
+            print(', '.join(input_constraints), file=f, end='\n')
+
+    proc_times = []
+    retain_times = []
+    retained_count = 0
+    pcbr = PCBR()
+    for run_i in range(n_runs):
+        # starting time
+        st = time.time()
+
+        user_request = pcbr.get_user_request(mock_file=generator_path, mode='one_pass')  # mock_file
+
+        if not isinstance(user_request, UserRequest):
+            break
+        n_neighbors = 3
+        nearest_cases, distances = pcbr.retrieve(new_instance=user_request.profile,
+                                                 feature_weights=user_request.preferences, n_neighbors=n_neighbors)
+        proposed_solution = pcbr.reuse(nearest_cases=nearest_cases[0], distances=distances, user_request=user_request)
+        proc_time = time.time()
+        # Revise skipped!
+        retained_count += pcbr.retain(proposed_solution, user_request.profile, n_neighbors=n_neighbors, verbose=False)
+        rev_ret_time = time.time()
+
+        time1 = proc_time - st
+        proc_times.append(time1)
+        time2 = rev_ret_time - st
+        retain_times.append(time2)
+
+    print('retained_count:', retained_count)
+    # TODO add plots!
+
 
 if __name__ == '__main__':
     # run_pcbr()
