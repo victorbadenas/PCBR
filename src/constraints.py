@@ -31,7 +31,7 @@ class Constraints:
                 else:
                     print('Error: invalid GPU brand (' + str(constraint_dict[k]) + ')')
             elif k == 'min_ram':
-                if constraint_dict[k] in ['16', '32', '64', '128','Idc']:
+                if constraint_dict[k] in ['16', '32', '64', '128', 'Idc']:
                     if constraint_dict[k] != 'Idc':
                         self.min_ram = int(constraint_dict[k])
                 else:
@@ -43,7 +43,7 @@ class Constraints:
                 else:
                     print('Error: invalid Maximum Budget (' + str(constraint_dict[k]) + ')')
             elif k == 'optical_drive':
-                constraint_dict[k]=constraint_dict[k].lower()
+                constraint_dict[k] = constraint_dict[k].lower()
                 if constraint_dict[k] in ['yes', 'no']:
                     self.optical_drive = constraint_dict[k]
                 else:
@@ -91,7 +91,7 @@ class Constraints:
             elif self.optical_drive == 'no' and configuration[5] == 1:
                 optical_ok = False
 
-        return [ cpu_ok, gpu_ok, ram_ok, budget_ok, optical_ok ]
+        return [cpu_ok, gpu_ok, ram_ok, budget_ok, optical_ok]
 
 
 class TestConstraints(unittest.TestCase):

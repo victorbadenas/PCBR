@@ -66,6 +66,6 @@ class NearestNeighbors:
         distances = np.ravel(distances)
 
         # index pointers
-        ind_ptr = np.arange(0, indexes.shape[0]*self.n_neighbors + 1, self.n_neighbors)
+        ind_ptr = np.arange(0, indexes.shape[0] * self.n_neighbors + 1, self.n_neighbors)
 
         return csr_matrix((distances, np.ravel(indexes), ind_ptr), shape=(indexes.shape[0], self.n_fit_samples_))

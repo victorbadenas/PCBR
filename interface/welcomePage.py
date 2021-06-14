@@ -38,13 +38,14 @@ def setup_logging():
     retain_logger.setLevel(logging.INFO)
     app_logger.setLevel(logging.INFO)
 
+
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         self.Dialog = Dialog
         self.Dialog.setObjectName("Welcome")
-        self.Dialog.resize(455, 341)
+        self.Dialog.setFixedSize(455, 341)
 
-        #start button
+        # start button
         self.startButton = QtWidgets.QPushButton(Dialog)
         self.startButton.setGeometry(QtCore.QRect(190, 240, 71, 23))
         self.startButton.setObjectName("startButton")
@@ -95,14 +96,16 @@ class Ui_Dialog(object):
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "Welcome"))
-        self.startButton.setText(_translate("Dialog", "start"))
-        self.label.setText(_translate("Dialog", "welcome to"))
+        self.startButton.setText(_translate("Dialog", "Start"))
+        self.label.setText(_translate("Dialog", "Welcome to"))
         self.label_2.setText(_translate("Dialog", "PCBR"))
-        self.label_3.setText(_translate("Dialog", "the case base recomender for personal computer components selection"))
+        self.label_3.setText(
+            _translate("Dialog", "the case base recomender for personal computer components selection"))
 
 
 if __name__ == "__main__":
     import sys
+
     setup_logging()
 
     app = QtWidgets.QApplication(sys.argv)

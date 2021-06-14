@@ -8,12 +8,12 @@ from collections import defaultdict
 from user_request import UserRequest
 
 # Constants
-MAP_CPU=0
-MAP_RAM=1
-MAP_SSD=2
-MAP_HDD=3
-MAP_GPU=4
-MAP_OPT=5
+MAP_CPU = 0
+MAP_RAM = 1
+MAP_SSD = 2
+MAP_HDD = 3
+MAP_GPU = 4
+MAP_OPT = 5
 
 # Module-global data
 reuse_logger = logging.getLogger('reuse')
@@ -69,10 +69,10 @@ class AdaptPC:
         self.user_request = user_request
 
         # Weighted average given distances to nearest neighbors so as to create new PC.
-        sims = [1/(distance + 0.1) for distance in distances]
-        norm_sims = np.array([sim/np.sum(sims) for sim in sims])[0]
+        sims = [1 / (distance + 0.1) for distance in distances]
+        norm_sims = np.array([sim / np.sum(sims) for sim in sims])[0]
 
-        adapted_solution = [np.sum([norm_sims[neighbor_idx]*nearest_neighbors[neighbor_idx][target_col]
+        adapted_solution = [np.sum([norm_sims[neighbor_idx] * nearest_neighbors[neighbor_idx][target_col]
                                     for neighbor_idx in range(nearest_neighbors.shape[0])])
                             for target_col in range(nearest_neighbors.shape[1])]
 
@@ -82,7 +82,7 @@ class AdaptPC:
         reuse_logger.debug('Numeric representation: ' + str(adapted_solution))
         self.cur_symbolic_soln = self._map_to_closest(adapted_solution)
         reuse_logger.debug('Configuration after weighted adaptation: ' + str(self.cur_symbolic_soln))
-        additional_info=[]
+        additional_info = []
         self.cur_numeric_soln = self.map_to_numeric(self.cur_symbolic_soln, additional_info=additional_info)
         self.cur_addl_info = additional_info
 
@@ -91,9 +91,9 @@ class AdaptPC:
         reuse_logger.debug('Checking constraints and optimizing...')
         reuse_logger.debug('Constraints')
         reuse_logger.debug('-----------')
-        reuse_logger.debug('CPU Brand: '  + str(self.user_request.constraints.cpu_brand))
-        reuse_logger.debug('GPU Brand: '  + str(self.user_request.constraints.gpu_brand))
-        reuse_logger.debug('Min RAM: '    + str(self.user_request.constraints.min_ram))
+        reuse_logger.debug('CPU Brand: ' + str(self.user_request.constraints.cpu_brand))
+        reuse_logger.debug('GPU Brand: ' + str(self.user_request.constraints.gpu_brand))
+        reuse_logger.debug('Min RAM: ' + str(self.user_request.constraints.min_ram))
         reuse_logger.debug('Max budget: ' + str(self.user_request.constraints.max_budget))
         reuse_logger.debug('Preferences: ' + str(user_request.preferences))
         reuse_logger.debug('Raw Preferences: ' + str(user_request.raw_preferences))
@@ -121,30 +121,30 @@ class AdaptPC:
     def _create_tables(self):
         # This function should only depend on static things and user preferences, i.e., not read
         # or modify the current solution
-        cpu_table=self.mappers[MAP_CPU].data
-        gpu_table=self.mappers[MAP_GPU].data
-        ram_table=self.mappers[MAP_RAM].data
-        ssd_table=self.mappers[MAP_SSD].data
-        hdd_table=self.mappers[MAP_HDD].data
-        opt_table=self.mappers[MAP_OPT].data
+        cpu_table = self.mappers[MAP_CPU].data
+        gpu_table = self.mappers[MAP_GPU].data
+        ram_table = self.mappers[MAP_RAM].data
+        ssd_table = self.mappers[MAP_SSD].data
+        hdd_table = self.mappers[MAP_HDD].data
+        opt_table = self.mappers[MAP_OPT].data
 
         if self.user_request.constraints.cpu_brand in ['Intel', 'AMD']:
-            self.cpu_table = cpu_table[cpu_table['Manufacturer']==self.user_request.constraints.cpu_brand]
+            self.cpu_table = cpu_table[cpu_table['Manufacturer'] == self.user_request.constraints.cpu_brand]
             self.cpu_table_alt = None
         elif self.user_request.constraints.cpu_brand in ['PreferIntel', 'PreferAMD']:
             brand = 'Intel' if self.user_request.constraints.cpu_brand == 'PreferIntel' else 'AMD'
-            self.cpu_table = cpu_table[cpu_table['Manufacturer']==brand]
+            self.cpu_table = cpu_table[cpu_table['Manufacturer'] == brand]
             self.cpu_table_alt = cpu_table
         else:
             self.cpu_table = cpu_table
             self.cpu_table_alt = None
 
         if self.user_request.constraints.gpu_brand in ['NVIDIA', 'AMD']:
-            self.gpu_table = gpu_table[gpu_table['Manufacturer']==self.user_request.constraints.gpu_brand]
+            self.gpu_table = gpu_table[gpu_table['Manufacturer'] == self.user_request.constraints.gpu_brand]
             self.gpu_table_alt = None
         elif self.user_request.constraints.gpu_brand in ['PreferNVIDIA', 'PreferAMD']:
             brand = 'NVIDIA' if self.user_request.constraints.gpu_brand == 'PreferNVIDIA' else 'AMD'
-            self.gpu_table = gpu_table[gpu_table['Manufacturer']==brand]
+            self.gpu_table = gpu_table[gpu_table['Manufacturer'] == brand]
             self.gpu_table_alt = gpu_table
         else:
             self.gpu_table = gpu_table
@@ -153,10 +153,10 @@ class AdaptPC:
         if self.user_request.constraints.min_ram is not None:
             # Capacity needs to be scaled to match the RAM table units
             reuse_logger.debug(self.user_request.constraints.min_ram)
-            ram_limit=np.log2(np.array(self.user_request.constraints.min_ram)+1)
-            ram_limit=self.mappers[MAP_RAM].scaler['scaler'].transform(ram_limit.reshape(-1,1))[0,0]
+            ram_limit = np.log2(np.array(self.user_request.constraints.min_ram) + 1)
+            ram_limit = self.mappers[MAP_RAM].scaler['scaler'].transform(ram_limit.reshape(-1, 1))[0, 0]
             reuse_logger.debug(ram_limit)
-            self.ram_table=ram_table[ram_table['Capacity']>=ram_limit]
+            self.ram_table = ram_table[ram_table['Capacity'] >= ram_limit]
         else:
             self.ram_table = ram_table
 
@@ -166,28 +166,28 @@ class AdaptPC:
 
         # Now, attempt to extract the priority order in which rules should be applied based on preferences
         reuse_logger.debug(self.user_request.raw_preferences)
-        prefs=self.user_request.raw_preferences
-        voter=defaultdict(lambda : 0)
-        voter['Budget'] += prefs[0]*4+1
+        prefs = self.user_request.raw_preferences
+        voter = defaultdict(lambda: 0)
+        voter['Budget'] += prefs[0] * 4 + 1
         if prefs[3] >= 0.5:
             # GPU More important for performance if Gaming is important
-            voter['CPU'] += (prefs[1]*4+1)/2
-            voter['GPU'] += prefs[1]*4+1
+            voter['CPU'] += (prefs[1] * 4 + 1) / 2
+            voter['GPU'] += prefs[1] * 4 + 1
         else:
             # Otherwise CPU more important
-            voter['CPU'] += prefs[1]*4+1
-            voter['GPU'] += (prefs[1]*4+1)/2
+            voter['CPU'] += prefs[1] * 4 + 1
+            voter['GPU'] += (prefs[1] * 4 + 1) / 2
         # Make RAM as important as Multitasking/Production
-        voter['RAM'] += ((prefs[2]*4+1)+(prefs[5]*4+1))/2
-        voter['SSD'] += prefs[6]*4+1
-        voter['HDD'] += (1-prefs[6])*4+1
+        voter['RAM'] += ((prefs[2] * 4 + 1) + (prefs[5] * 4 + 1)) / 2
+        voter['SSD'] += prefs[6] * 4 + 1
+        voter['HDD'] += (1 - prefs[6]) * 4 + 1
         # Tie-breaker for SSD/HDD based on perf vs. budget
         if prefs[1] > prefs[0]:
             voter['SSD'] += 1
         else:
             voter['HDD'] += 1
-        voter = sorted(voter, key=lambda x: x[1],reverse=True)
-        self.priorities=voter
+        voter = sorted(voter, key=lambda x: x[1], reverse=True)
+        self.priorities = voter
 
     def _apply_rules(self):
         # This function should modify the current solution and apply various rules in order to
@@ -221,9 +221,9 @@ class AdaptPC:
                 # We will just rely on the filtered RAM table to tell us what's valid
                 # Commented code provided here to perform symbolic->numeric translation if you need
                 # a more explicit comparison
-                #min_ram = self.user_request.constraints.min_ram
-                #min_ram_norm = np.log2( np.array(min_ram) + 1 )
-                #min_ram_norm = self.mappers[MAP_RAM].scaler['scaler'].transform(min_ram_norm.reshape(-1,1))[0][0]
+                # min_ram = self.user_request.constraints.min_ram
+                # min_ram_norm = np.log2( np.array(min_ram) + 1 )
+                # min_ram_norm = self.mappers[MAP_RAM].scaler['scaler'].transform(min_ram_norm.reshape(-1,1))[0][0]
                 if self.cur_numeric_soln[MAP_RAM] < self.ram_table['Capacity'].iloc[0]:
                     self.cur_symbolic_soln[MAP_RAM] = self.user_request.constraints.min_ram
             elif pri == 'SSD':
@@ -232,7 +232,9 @@ class AdaptPC:
                 if self.cur_symbolic_soln[MAP_SSD] + self.cur_symbolic_soln[MAP_HDD] == 0:
                     # Pick the first one that's non-zero
                     desired_ssd_size = self.ssd_table['Capacity'].iloc[1]
-                    desired_ssd_size=self.mappers[MAP_SSD].scaler['scaler'].inverse_transform(np.array(desired_ssd_size).reshape(-1,1))[0,0]
+                    desired_ssd_size = \
+                    self.mappers[MAP_SSD].scaler['scaler'].inverse_transform(np.array(desired_ssd_size).reshape(-1, 1))[
+                        0, 0]
                     desired_ssd_size = np.power(2, desired_ssd_size) - 1
                     self.cur_symbolic_soln[MAP_SSD] = desired_ssd_size
             elif pri == 'HDD':
@@ -241,7 +243,9 @@ class AdaptPC:
                 if self.cur_symbolic_soln[MAP_SSD] + self.cur_symbolic_soln[MAP_HDD] == 0:
                     # Pick the first one that's non-zero
                     desired_hdd_size = self.hdd_table['Capacity'].iloc[1]
-                    desired_hdd_size=self.mappers[MAP_HDD].scaler['scaler'].inverse_transform(np.array(desired_hdd_size).reshape(-1,1))[0,0]
+                    desired_hdd_size = \
+                    self.mappers[MAP_HDD].scaler['scaler'].inverse_transform(np.array(desired_hdd_size).reshape(-1, 1))[
+                        0, 0]
                     desired_hdd_size = np.power(2, desired_hdd_size) - 1
                     self.cur_symbolic_soln[MAP_HDD] = desired_hdd_size
             elif pri == 'Budget':
@@ -254,7 +258,7 @@ class AdaptPC:
         for pri in self.priorities[::-1]:
             if pri == 'CPU':
                 # If the current CPU isn't on the preferred list (created by constraints), try to pick one that is
-                if not any(self.cpu_table['CPU Name']==self.cur_symbolic_soln[MAP_CPU]):
+                if not any(self.cpu_table['CPU Name'] == self.cur_symbolic_soln[MAP_CPU]):
                     cpu_found = False
                     reuse_logger.debug('CPU not on preferred list. Replacing...')
                     candidate_cpus = self.cpu_table[self.cpu_table['CPU Mark'] >= self.cur_numeric_soln[MAP_CPU]]
@@ -267,14 +271,15 @@ class AdaptPC:
                     # Check alternate list, if required
                     if not cpu_found and self.cpu_table_alt is not None:
                         reuse_logger.debug('No suitable CPU in preferred list. Checking alternate list...')
-                        candidate_cpus = self.cpu_table_alt[self.cpu_table_alt['CPU Mark'] >= self.cur_numeric_soln[MAP_CPU]]
+                        candidate_cpus = self.cpu_table_alt[
+                            self.cpu_table_alt['CPU Mark'] >= self.cur_numeric_soln[MAP_CPU]]
                         if not candidate_cpus.empty:
                             cheapest = candidate_cpus['MSRP'].idxmin()
                             # Update it with cheapest equivalent/better CPU
                             self.cur_symbolic_soln[MAP_CPU] = candidate_cpus.loc[cheapest]['CPU Name']
             elif pri == 'GPU':
                 # If the current GPU isn't on the preferred list (created by constraints), try to pick one that is
-                if not any(self.gpu_table['GPU Name']==self.cur_symbolic_soln[MAP_GPU]):
+                if not any(self.gpu_table['GPU Name'] == self.cur_symbolic_soln[MAP_GPU]):
                     gpu_found = False
                     reuse_logger.debug('GPU not on preferred list. Replacing...')
                     candidate_gpus = self.gpu_table[self.gpu_table['Benchmark'] >= self.cur_numeric_soln[MAP_GPU]]
@@ -287,7 +292,8 @@ class AdaptPC:
                     # Check alternate list, if required
                     if not gpu_found and self.gpu_table_alt is not None:
                         reuse_logger.debug('No suitable GPU in preferred list. Checking alternate list...')
-                        candidate_gpus = self.gpu_table_alt[self.gpu_table_alt['Benchmark'] >= self.cur_numeric_soln[MAP_GPU]]
+                        candidate_gpus = self.gpu_table_alt[
+                            self.gpu_table_alt['Benchmark'] >= self.cur_numeric_soln[MAP_GPU]]
                         if not candidate_gpus.empty:
                             cheapest = candidate_gpus['MSRP'].idxmin()
                             # Update it with cheapest equivalent/better GPU
@@ -314,11 +320,11 @@ class AdaptPC:
         # IMPORTANT Note: This function assumes the input is in the symbolic solution and will replace the
         #                 numeric one. It has to do an extra copy back to numeric because the price is
         #                 updated on the numeric->symbolic conversion.
-        additional_info=[]
+        additional_info = []
         self.cur_numeric_soln = self.map_to_numeric(self.cur_symbolic_soln, additional_info=additional_info)
         self.cur_addl_info = additional_info
         self.cur_symbolic_soln = self._map_to_closest(self.cur_numeric_soln)
-        additional_info=[]
+        additional_info = []
         self.cur_numeric_soln = self.map_to_numeric(self.cur_symbolic_soln, additional_info=additional_info)
         self.cur_addl_info = additional_info
 
@@ -327,10 +333,10 @@ class AdaptPC:
 
         # If CPU is AMD, need a GPU so let's add the most basic one if none is present
         if self._get_cpu_brand(self.cur_symbolic_soln[MAP_CPU]) == 'AMD' and \
-           self._get_gpu_brand(self.cur_symbolic_soln[MAP_GPU]) == 'Intel':
+                self._get_gpu_brand(self.cur_symbolic_soln[MAP_GPU]) == 'Intel':
             reuse_logger.debug('AMD processor requires CPU. Adding basic GPU.')
-            gpu_table=self.mappers[MAP_GPU].data
-            gpu_table=gpu_table[gpu_table['GPU Name']!='Integrated']
+            gpu_table = self.mappers[MAP_GPU].data
+            gpu_table = gpu_table[gpu_table['GPU Name'] != 'Integrated']
             cheapest = gpu_table['MSRP'].idxmin()
             self.cur_symbolic_soln[MAP_GPU] = gpu_table.loc[cheapest]['GPU Name']
             self._sync_numeric_symbolic()
@@ -339,8 +345,8 @@ class AdaptPC:
         # importance user preferences into account (likely just budget/performance/multitasking now)
         # Currently, budget is the only one that could really be broken.
         constraints_check = self.user_request.constraints.ok(self.cur_symbolic_soln,
-                self._get_cpu_brand(self.cur_symbolic_soln[MAP_CPU]),
-                self._get_gpu_brand(self.cur_symbolic_soln[MAP_GPU]))
+                                                             self._get_cpu_brand(self.cur_symbolic_soln[MAP_CPU]),
+                                                             self._get_gpu_brand(self.cur_symbolic_soln[MAP_GPU]))
 
         # Handle the failed constraints, one by one
 
@@ -348,10 +354,10 @@ class AdaptPC:
         # wrong now, something's wrong with our code, so assert
         if constraints_check[4] == False:
             reuse_logger.warn('Optical drive constraint error.')
-            assert(1==0)
+            assert (1 == 0)
         if constraints_check[2] == False:
             reuse_logger.warn('RAM constraint error.')
-            assert(1==0)
+            assert (1 == 0)
 
         # I also think that CPU and GPU brand should be correct since we haven't taken price into consideration
         # at any point up until now. Let's just print a warning if this isn't true so we can know about it
@@ -359,19 +365,19 @@ class AdaptPC:
         # Update: This seems to be possible to hit. It happens when the CPU brand is restricted
         #         to Intel, but it's trying to replace an AMD processor with a significantly
         #         higher benchmark
-        if constraints_check[0] == False: # CPU Brand
+        if constraints_check[0] == False:  # CPU Brand
             reuse_logger.warn('Warning: CPU Brand constraint could not be met.')
             reuse_logger.debug(self.cur_symbolic_soln)
-        if constraints_check[1] == False: # GPU Brand
+        if constraints_check[1] == False:  # GPU Brand
             reuse_logger.warn('Warning: GPU Brand constraint could not be met.')
             reuse_logger.debug(self.cur_symbolic_soln)
 
         # Now we're left with only budget
         # Let's figure out whether performance or budget is more important and optimize components accordingly
         # Lower index is higher priority
-        cpuidx=self.priorities.index('CPU')
-        gpuidx=self.priorities.index('GPU')
-        budgetidx=self.priorities.index('Budget')
+        cpuidx = self.priorities.index('CPU')
+        gpuidx = self.priorities.index('GPU')
+        budgetidx = self.priorities.index('Budget')
 
         if constraints_check[3] == False:
             self._optimize_price(cpuidx, gpuidx, budgetidx)
@@ -379,68 +385,67 @@ class AdaptPC:
         # This may not be optimal, but it's as good as we're going to get. Leave if up to the expert to
         # decide in the Revision step if it's good enough or not.
 
-    def _optimize_price(self,cpuidx,gpuidx,budgetidx):
-            budget=self.user_request.constraints.max_budget
-            price=self.cur_symbolic_soln[6]
-            cpu_price = self._get_cpu_price(self.cur_symbolic_soln[MAP_CPU])
-            gpu_price = self._get_gpu_price(self.cur_symbolic_soln[MAP_GPU])
-            base_price = price - cpu_price - gpu_price
-            cpu_gpu_budget = budget - base_price
-            reuse_logger.debug(f'Total Price: {price} Budget: {budget}')
-            reuse_logger.debug(f'CPU Price: {cpu_price}')
-            reuse_logger.debug(f'GPU Price: {gpu_price}')
-            reuse_logger.debug(f'Base price: {base_price} CPU/GPU budget: {cpu_gpu_budget}')
+    def _optimize_price(self, cpuidx, gpuidx, budgetidx):
+        budget = self.user_request.constraints.max_budget
+        price = self.cur_symbolic_soln[6]
+        cpu_price = self._get_cpu_price(self.cur_symbolic_soln[MAP_CPU])
+        gpu_price = self._get_gpu_price(self.cur_symbolic_soln[MAP_GPU])
+        base_price = price - cpu_price - gpu_price
+        cpu_gpu_budget = budget - base_price
+        reuse_logger.debug(f'Total Price: {price} Budget: {budget}')
+        reuse_logger.debug(f'CPU Price: {cpu_price}')
+        reuse_logger.debug(f'GPU Price: {gpu_price}')
+        reuse_logger.debug(f'Base price: {base_price} CPU/GPU budget: {cpu_gpu_budget}')
 
-            # Only use the same brand of CPU
-            cpu_table = self.mappers[MAP_CPU].data
-            cpu_brand = self._get_cpu_brand(self.cur_symbolic_soln[MAP_CPU])
-            cpu_table=cpu_table[cpu_table['Manufacturer']==cpu_brand]
-            cpu_table=cpu_table[cpu_table['MSRP']<=cpu_gpu_budget]
+        # Only use the same brand of CPU
+        cpu_table = self.mappers[MAP_CPU].data
+        cpu_brand = self._get_cpu_brand(self.cur_symbolic_soln[MAP_CPU])
+        cpu_table = cpu_table[cpu_table['Manufacturer'] == cpu_brand]
+        cpu_table = cpu_table[cpu_table['MSRP'] <= cpu_gpu_budget]
 
-            # Keep same brand of GPU
-            gpu_table = self.mappers[MAP_GPU].data
-            gpu_brand = self._get_gpu_brand(self.cur_symbolic_soln[MAP_GPU])
-            gpu_table=gpu_table[gpu_table['Manufacturer']==gpu_brand]
-            gpu_table=gpu_table[gpu_table['MSRP']<=cpu_gpu_budget]
+        # Keep same brand of GPU
+        gpu_table = self.mappers[MAP_GPU].data
+        gpu_brand = self._get_gpu_brand(self.cur_symbolic_soln[MAP_GPU])
+        gpu_table = gpu_table[gpu_table['Manufacturer'] == gpu_brand]
+        gpu_table = gpu_table[gpu_table['MSRP'] <= cpu_gpu_budget]
 
-            new_cpu = None
-            new_gpu = None
+        new_cpu = None
+        new_gpu = None
 
+        if cpu_table.empty:
+            if budgetidx < gpuidx:
+                # Try to find a cheaper GPU but maintain CPU (since there aren't any viable options)
+                new_gpu = self._find_cheaper_gpu(gpu_table, cpu_gpu_budget, cpu_price)
+        elif gpu_table.empty:
+            if budgetidx < cpuidx:
+                # Try to find a cheaper CPU but maintain GPU (since there aren't any viable options)
+                new_cpu = self._find_cheaper_cpu(cpu_table, cpu_gpu_budget, gpu_price)
+        else:
+            if budgetidx < cpuidx < gpuidx:
+                # If budget is the most important, let's get the price down
+                # CPU more important than GPU
+                new_cpu, new_gpu = self._find_cheaper_cpu_gpu(cpu_table, gpu_table, cpu_gpu_budget, 'cpu')
+            elif budgetidx < gpuidx < cpuidx:
+                # If budget is the most important, let's get the price down
+                # GPU more important than CPU
+                new_cpu, new_gpu = self._find_cheaper_cpu_gpu(cpu_table, gpu_table, cpu_gpu_budget, 'gpu')
+            elif cpuidx < budgetidx < gpuidx:
+                # Try to find a cheaper GPU but maintain CPU
+                new_gpu = self._find_cheaper_gpu(gpu_table, cpu_gpu_budget, cpu_price)
+            elif gpuidx < budgetidx < cpuidx:
+                # Try to find a cheaper CPU but maintain GPU
+                new_cpu = self._find_cheaper_cpu(cpu_table, cpu_gpu_budget, gpu_price)
+            elif budgetidx > cpuidx and budgetidx > gpuidx:
+                # Performance is more important than budget so we're done
+                pass
 
-            if cpu_table.empty:
-                if budgetidx < gpuidx:
-                    # Try to find a cheaper GPU but maintain CPU (since there aren't any viable options)
-                    new_gpu = self._find_cheaper_gpu(gpu_table, cpu_gpu_budget, cpu_price)
-            elif gpu_table.empty:
-                if budgetidx < cpuidx:
-                    # Try to find a cheaper CPU but maintain GPU (since there aren't any viable options)
-                    new_cpu = self._find_cheaper_cpu(cpu_table, cpu_gpu_budget, gpu_price)
-            else:
-                if budgetidx < cpuidx < gpuidx:
-                    # If budget is the most important, let's get the price down
-                    # CPU more important than GPU
-                    new_cpu, new_gpu = self._find_cheaper_cpu_gpu(cpu_table, gpu_table, cpu_gpu_budget, 'cpu')
-                elif budgetidx < gpuidx < cpuidx:
-                    # If budget is the most important, let's get the price down
-                    # GPU more important than CPU
-                    new_cpu, new_gpu = self._find_cheaper_cpu_gpu(cpu_table, gpu_table, cpu_gpu_budget, 'gpu')
-                elif cpuidx < budgetidx < gpuidx:
-                    # Try to find a cheaper GPU but maintain CPU
-                    new_gpu = self._find_cheaper_gpu(gpu_table, cpu_gpu_budget, cpu_price)
-                elif gpuidx < budgetidx < cpuidx:
-                    # Try to find a cheaper CPU but maintain GPU
-                    new_cpu = self._find_cheaper_cpu(cpu_table, cpu_gpu_budget, gpu_price)
-                elif budgetidx > cpuidx and budgetidx > gpuidx:
-                    # Performance is more important than budget so we're done
-                    pass
+        if new_cpu is not None:
+            self.cur_symbolic_soln[MAP_CPU] = new_cpu
 
-            if new_cpu is not None:
-                self.cur_symbolic_soln[MAP_CPU] = new_cpu
+        if new_gpu is not None:
+            self.cur_symbolic_soln[MAP_GPU] = new_gpu
 
-            if new_gpu is not None:
-                self.cur_symbolic_soln[MAP_GPU] = new_gpu
-
-            self._sync_numeric_symbolic()
+        self._sync_numeric_symbolic()
 
     def _find_cheaper_gpu(self, gpu_table, cpu_gpu_budget, cpu_price):
         new_gpu = None
@@ -470,7 +475,8 @@ class AdaptPC:
             # Start from most expensive CPU in outer loop, try all GPUs, then decrease CPU
             for c_index, c_row in cpu_table[['CPU Name', 'MSRP']].sort_values(by='MSRP', ascending=False).iterrows():
                 cpu_price = c_row['MSRP']
-                for g_index, g_row in gpu_table[['GPU Name', 'MSRP']].sort_values(by='MSRP', ascending=False).iterrows():
+                for g_index, g_row in gpu_table[['GPU Name', 'MSRP']].sort_values(by='MSRP',
+                                                                                  ascending=False).iterrows():
                     gpu_price = g_row['MSRP']
 
                     if cpu_price + gpu_price <= cpu_gpu_budget:
@@ -480,12 +486,13 @@ class AdaptPC:
                         break  # Inner loop
 
                 if found_solution:
-                    break # Outer loop
+                    break  # Outer loop
         else:
             # Start from most expensive GPU in outer loop, try all CPUs, then decrease CPU
             for g_index, g_row in gpu_table[['GPU Name', 'MSRP']].sort_values(by='MSRP', ascending=False).iterrows():
                 gpu_price = g_row['MSRP']
-                for c_index, c_row in cpu_table[['CPU Name', 'MSRP']].sort_values(by='MSRP', ascending=False).iterrows():
+                for c_index, c_row in cpu_table[['CPU Name', 'MSRP']].sort_values(by='MSRP',
+                                                                                  ascending=False).iterrows():
                     cpu_price = c_row['MSRP']
 
                     if cpu_price + gpu_price <= cpu_gpu_budget:
@@ -495,78 +502,75 @@ class AdaptPC:
                         break  # Inner loop
 
                 if found_solution:
-                    break # Outer loop
+                    break  # Outer loop
 
         return new_cpu, new_gpu
 
     def _map_to_closest(self, adapted_solution):
-            # Mapping to closest real component.
-            # Putting into a function since it's a human-readable way to monitor
-            # transformations as they are applied. This function is also important
-            # because it calculates the price of the assembled solution.
+        # Mapping to closest real component.
+        # Putting into a function since it's a human-readable way to monitor
+        # transformations as they are applied. This function is also important
+        # because it calculates the price of the assembled solution.
 
-            # Copy data so we don't destroy it
-            tmp_adapted_solution = adapted_solution.copy()
+        # Copy data so we don't destroy it
+        tmp_adapted_solution = adapted_solution.copy()
 
-            # TODO: Should we start the price off higher than 0 to account for miscellaneous things
-            #       like motherboard, case, etc., and be a fairer comparison to the cases? I'm
-            #       thinking maybe 150-200€ might be a fair starting point...
-            solution_price = 0
-            for idx in range(len(tmp_adapted_solution) - 1):
-                tmp_adapted_solution[idx] = self.mappers[idx].transform(np.array(tmp_adapted_solution[idx]),
-                                                            from_col=self.mappers[idx].scaler_columns[0],
-                                                            to_col=target_columns[idx])[0]
-                solution_price += self.mappers[idx].transform(np.array(tmp_adapted_solution[idx]),
-                                                         from_col=target_columns[idx],
-                                                         to_col=price_columns[idx],)[0]
-            tmp_adapted_solution[-1] = np.round(solution_price, 2)
+        solution_price = 0
+        for idx in range(len(tmp_adapted_solution) - 1):
+            tmp_adapted_solution[idx] = self.mappers[idx].transform(np.array(tmp_adapted_solution[idx]),
+                                                                    from_col=self.mappers[idx].scaler_columns[0],
+                                                                    to_col=target_columns[idx])[0]
+            solution_price += self.mappers[idx].transform(np.array(tmp_adapted_solution[idx]),
+                                                          from_col=target_columns[idx],
+                                                          to_col=price_columns[idx], )[0]
+        tmp_adapted_solution[-1] = np.round(solution_price, 2)
 
-            # Transformation of Log2 components.
-            for idx in range(1, 4):
-                tmp_adapted_solution[idx] = np.round(
-                    np.power(
-                        2,
-                        self.scalers[idx-1].inverse_transform(
-                            [[tmp_adapted_solution[idx]]])[0][0]
-                    ) - 1
-                )
-            return tmp_adapted_solution
+        # Transformation of Log2 components.
+        for idx in range(1, 4):
+            tmp_adapted_solution[idx] = np.round(
+                np.power(
+                    2,
+                    self.scalers[idx - 1].inverse_transform(
+                        [[tmp_adapted_solution[idx]]])[0][0]
+                ) - 1
+            )
+        return tmp_adapted_solution
 
     def map_to_numeric(self, symbolic, additional_info=None):
-            # Copy data so we don't destroy it
-            numeric = symbolic.copy()
+        # Copy data so we don't destroy it
+        numeric = symbolic.copy()
 
-            # If additional info is requested, set up the structure
-            if additional_info == []:
-                cpu_brand=self.mappers[MAP_CPU].transform(np.array(numeric[MAP_CPU]),
-                                                from_col=target_columns[MAP_CPU],
-                                                to_col='Manufacturer')[0]
-                gpu_brand=self.mappers[MAP_GPU].transform(np.array(numeric[MAP_GPU]),
-                                                from_col=target_columns[MAP_GPU],
-                                                to_col='Manufacturer')[0]
-                additional_info.append(cpu_brand)
-                additional_info.append(gpu_brand)
+        # If additional info is requested, set up the structure
+        if additional_info == []:
+            cpu_brand = self.mappers[MAP_CPU].transform(np.array(numeric[MAP_CPU]),
+                                                        from_col=target_columns[MAP_CPU],
+                                                        to_col='Manufacturer')[0]
+            gpu_brand = self.mappers[MAP_GPU].transform(np.array(numeric[MAP_GPU]),
+                                                        from_col=target_columns[MAP_GPU],
+                                                        to_col='Manufacturer')[0]
+            additional_info.append(cpu_brand)
+            additional_info.append(gpu_brand)
 
-            # Convert symbolic things (CPU/GPU names) to numbers
-            numeric[MAP_CPU]=self.mappers[MAP_CPU].transform(np.array(numeric[MAP_CPU]),
-                                                             from_col=target_columns[MAP_CPU],
-                                                             to_col=self.mappers[MAP_CPU].scaler_columns[0])[0]
-            numeric[MAP_GPU]=self.mappers[MAP_GPU].transform(np.array(numeric[MAP_GPU]),
-                                                             from_col=target_columns[MAP_GPU],
-                                                             to_col=self.mappers[MAP_GPU].scaler_columns[0])[0]
+        # Convert symbolic things (CPU/GPU names) to numbers
+        numeric[MAP_CPU] = self.mappers[MAP_CPU].transform(np.array(numeric[MAP_CPU]),
+                                                           from_col=target_columns[MAP_CPU],
+                                                           to_col=self.mappers[MAP_CPU].scaler_columns[0])[0]
+        numeric[MAP_GPU] = self.mappers[MAP_GPU].transform(np.array(numeric[MAP_GPU]),
+                                                           from_col=target_columns[MAP_GPU],
+                                                           to_col=self.mappers[MAP_GPU].scaler_columns[0])[0]
 
-            # Transformation of Log2 components.
-            numeric[1:4] = np.log2(np.array(numeric[1:4])+1)
+        # Transformation of Log2 components.
+        numeric[1:4] = np.log2(np.array(numeric[1:4]) + 1)
 
-            for i in range(1,4):
-                numeric[i]=self.mappers[i].scaler['scaler'].transform(np.array(numeric[i]).reshape(-1,1))
-                numeric[i]=self.mappers[i].transform(numeric[i],
-                                                from_col=target_columns[i],
-                                                to_col=self.mappers[i].scaler_columns[0])[0]
+        for i in range(1, 4):
+            numeric[i] = self.mappers[i].scaler['scaler'].transform(np.array(numeric[i]).reshape(-1, 1))
+            numeric[i] = self.mappers[i].transform(numeric[i],
+                                                   from_col=target_columns[i],
+                                                   to_col=self.mappers[i].scaler_columns[0])[0]
 
-            # Note: No transformations required for optical drive or price
+        # Note: No transformations required for optical drive or price
 
-            return numeric
+        return numeric
 
     def from_pc_to_numeric(self, revised_solution):
         numeric_revised_solution = self.map_to_numeric(revised_solution)
@@ -575,24 +579,24 @@ class AdaptPC:
 
     def _get_cpu_brand(self, cpu):
         cpu_table = self.mappers[MAP_CPU].data
-        entry = cpu_table[cpu_table['CPU Name']==cpu]
+        entry = cpu_table[cpu_table['CPU Name'] == cpu]
         brand = entry['Manufacturer'].iloc[0]
         return brand
 
     def _get_gpu_brand(self, gpu):
         gpu_table = self.mappers[MAP_GPU].data
-        entry = gpu_table[gpu_table['GPU Name']==gpu]
+        entry = gpu_table[gpu_table['GPU Name'] == gpu]
         brand = entry['Manufacturer'].iloc[0]
         return brand
 
     def _get_cpu_price(self, cpu):
         cpu_table = self.mappers[MAP_CPU].data
-        entry = cpu_table[cpu_table['CPU Name']==cpu]
+        entry = cpu_table[cpu_table['CPU Name'] == cpu]
         price = entry['MSRP'].iloc[0]
         return price
 
     def _get_gpu_price(self, gpu):
         gpu_table = self.mappers[MAP_GPU].data
-        entry = gpu_table[gpu_table['GPU Name']==gpu]
+        entry = gpu_table[gpu_table['GPU Name'] == gpu]
         price = entry['MSRP'].iloc[0]
         return price

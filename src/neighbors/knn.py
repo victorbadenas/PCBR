@@ -74,7 +74,8 @@ class KNeighborsClassifier(BaseEstimator, ClassifierMixin):
         currenly not supported and it defaults to uniform.
         """
         if isinstance(self.weights, np.ndarray):
-            assert self.weights.shape[0] == self.trainX.shape[1], f"feature mismatch {self.weights.shape[0]} != {self.trainX.shape[1]}"
+            assert self.weights.shape[0] == self.trainX.shape[
+                1], f"feature mismatch {self.weights.shape[0]} != {self.trainX.shape[1]}"
             self.w = self.weights
         elif self.weights == UNIFORM:
             self.w = np.ones((self.trainX.shape[1],))
