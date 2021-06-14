@@ -19,18 +19,21 @@ class Constraints:
 
         for k in constraint_dict:
             if k == 'cpu_brand':
-                if constraint_dict[k] in ['Intel', 'PreferIntel', 'PreferAMD', 'AMD']:
-                    self.cpu_brand = constraint_dict[k]
+                if constraint_dict[k] in ['Intel', 'PreferIntel', 'PreferAMD', 'AMD', 'Idc']:
+                    if constraint_dict[k] != 'Idc':
+                        self.cpu_brand = constraint_dict[k]
                 else:
                     print('Error: invalid CPU brand (' + str(constraint_dict[k]) + ')')
             elif k == 'gpu_brand':
-                if constraint_dict[k] in ['NVIDIA', 'PreferNVIDIA', 'PreferAMD', 'AMD']:
-                    self.gpu_brand = constraint_dict[k]
+                if constraint_dict[k] in ['NVIDIA', 'PreferNVIDIA', 'PreferAMD', 'AMD', 'Idc']:
+                    if constraint_dict[k] != 'Idc':
+                        self.gpu_brand = constraint_dict[k]
                 else:
                     print('Error: invalid GPU brand (' + str(constraint_dict[k]) + ')')
             elif k == 'min_ram':
-                if constraint_dict[k] in ['16', '32', '64', '128']:
-                    self.min_ram = int(constraint_dict[k])
+                if constraint_dict[k] in ['16', '32', '64', '128','Idc']:
+                    if constraint_dict[k] != 'Idc':
+                        self.min_ram = int(constraint_dict[k])
                 else:
                     print('Error: invalid Minimum RAM (' + str(constraint_dict[k]) + ')')
             elif k == 'max_budget':
@@ -40,6 +43,7 @@ class Constraints:
                 else:
                     print('Error: invalid Maximum Budget (' + str(constraint_dict[k]) + ')')
             elif k == 'optical_drive':
+                constraint_dict[k]=constraint_dict[k].lower()
                 if constraint_dict[k] in ['yes', 'no']:
                     self.optical_drive = constraint_dict[k]
                 else:
