@@ -422,32 +422,63 @@ class PCBR:
                 print(f'Invalid choice: {cli_input}')
 
     def retain(self, revised_solution=None, user_profile=None, n_neighbors=3):
-        assert proposed_solution is not None and revision_result is not None
+        assert revised_solution is not None
 
         numeric_revised_solution = self.adapt_pc.from_pc_to_numeric(revised_solution)
-
-        target = self.target_attributes
-        target_knn = OurNearestNeighbors(n_neighbors=n_neighbors).fit(target.to_numpy())
-        target_neigh = target_knn.kneighbors_graph(target.to_numpy())
-        target_pred = target_knn.kneighbors([numeric_revised_solution])
-        target_pred_first_distance = target_pred[0][0][0]
-        target_stats = self.extract_statistics(target_neigh, target_pred_first_distance,
-                                               target, [numeric_revised_solution], n_neighbors, title='Solution')
-
         source = self.source_attributes
-        source_knn = OurNearestNeighbors(n_neighbors=n_neighbors).fit(source.to_numpy())
-        source_neigh = source_knn.kneighbors_graph(source.to_numpy())
-        source_pred = source_knn.kneighbors(user_profile)
-        source_pred_first_distance = source_pred[0][0][0]
-        source_stats = self.extract_statistics(source_neigh, source_pred_first_distance,
-                                               source, user_profile, n_neighbors, title='Problem')
-        #TODO Study both source and target to select the best threshold possible.
+        target = self.target_attributes
+
+        # To generate statistics of the Problem and Solution
+        # source_knn = OurNearestNeighbors(n_neighbors=n_neighbors).fit(source.to_numpy())
+        # source_neigh = source_knn.kneighbors_graph(source.to_numpy())
+        # source_pred = source_knn.kneighbors(user_profile)
+        # source_pred_first_distance = source_pred[0][0][0]
+        # source_stats = self.extract_statistics(source_neigh, source_pred_first_distance,
+        #                                        source, user_profile, n_neighbors, title='Problem',
+        #                                        plot_points=False)
+
+        # target_knn = OurNearestNeighbors(n_neighbors=n_neighbors).fit(target.to_numpy())
+        # target_neigh = target_knn.kneighbors_graph(target.to_numpy())
+        # target_pred = target_knn.kneighbors([numeric_revised_solution])
+        # target_pred_first_distance = target_pred[0][0][0]
+        # target_stats = self.extract_statistics(target_neigh, target_pred_first_distance,
+        #                                        target, [numeric_revised_solution], n_neighbors, title='Solution',
+        #                                        plot_points=False)
+
+        # Concatenating Problems and Solutions to see their representations in the nn space
+        full_data = pd.concat([source, target], axis=1)
+        full_new_instance = user_profile.tolist()[0]
+        full_new_instance.extend(numeric_revised_solution)
+
+        full_knn = OurNearestNeighbors(n_neighbors=n_neighbors).fit(full_data.to_numpy())
+        full_neigh = full_knn.kneighbors_graph(full_data.to_numpy())
+        full_pred = full_knn.kneighbors([full_new_instance])
+        full_pred_first_distance = full_pred[0][0][0]
+        full_stats = self.extract_statistics(full_neigh, full_pred_first_distance,
+                                               full_data, [full_new_instance], n_neighbors, title='Problem + Solution',
+                                               plot_points=True, plot_pca=True)
 
         print('\n---------------------------------------')
-        pcbr_logger.debug(f"Distance to the closest point from the prediction: {target_pred_first_distance}")
-        pcbr_logger.debug(f"STATISTICS")
-        pcbr_logger.debug(target_stats.head(), '\n')
-        if target_pred_first_distance >= target_stats['85%'][0]:
+        # pcbr_logger.debug(f"Distance to the closest point from the prediction for source: {target_pred_first_distance}")
+        # pcbr_logger.debug(f"SOURCE STATISTICS")
+        # pcbr_logger.debug(source_stats[0].head(), '\n')
+
+        # pcbr_logger.debug(f"Distance to the closest point from the prediction for target: {target_pred_first_distance}")
+        # pcbr_logger.debug(f"TARGET STATISTICS")
+        # pcbr_logger.debug(target_stats[0].head(), '\n')
+
+        pcbr_logger.debug(f"Distance to the closest point from the prediction for source: {full_pred_first_distance}")
+        pcbr_logger.debug(f"Full Problems+Solutions STATISTICS")
+        pcbr_logger.debug(full_stats[0].head(), '\n')
+
+        # We don't save problems and solutions that have predicted the first nn close:
+        # Problem close --> Solution close ==> Not saved!
+        # Problem close --> Solution far ==> OK
+        # Problem far --> Solution close ==> OK
+        # Problem far --> Solution far ==> OK
+        if full_pred_first_distance <= full_stats[0]['25%'][0]:
+            print("The proposed solution has NOT been stored!")
+        else:
             print("The proposed solution has been stored!")
             df_user_profile = pd.DataFrame(user_profile, columns=source.columns.tolist())
             df_revised_solution = pd.DataFrame([numeric_revised_solution], columns=target.columns.tolist())
@@ -455,11 +486,10 @@ class PCBR:
             self.source_attributes = self.source_attributes.append(df_user_profile, ignore_index=True)
             self.target_attributes = self.target_attributes.append(df_revised_solution, ignore_index=True)
             self.save_new_solution(revised_solution)
-        else:
-            print("The proposed solution has NOT been stored!")
         print('---------------------------------------\n')
 
-    def extract_statistics(self, neigh, pred, dataset, instance, n_neighbors, plot_points=False, title='###'):
+    def extract_statistics(self, neigh, pred, dataset, instance, n_neighbors, plot_points=False,
+                           plot_pca=False, title='###'):
         distances_map = {point: [] for point in range(1, n_neighbors)}
         for index, distance in enumerate(neigh.data):
             mode = index % n_neighbors
@@ -468,19 +498,39 @@ class PCBR:
         descriptions = []
         for dist in distances_map.values():
             df = pd.DataFrame(dist)
-            desc = df.describe(percentiles=[.25, .5, .75, .80, .85, .90, .95]).T
+            desc = df.describe(percentiles=[.25, .5, .75, .85, .95]).T
             descriptions.append(desc)
         statistics = pd.concat(descriptions, axis=0)
         stats = pd.DataFrame(statistics.values, columns=statistics.columns)
 
+        stats_percentiles = pd.DataFrame()
+        percentiles = ['25%', '50%', '75%', '85%', '95%', 'max']
+        max_limit = 'min'
+        i = 0
+        while max_limit != 'max':
+            results = []
+            min_limit = max_limit
+            max_limit = percentiles[i]
+            for index in distances_map.keys():
+                nn_dist = np.array(distances_map[index])
+                min_percent = stats[min_limit][index - 1]
+                max_percent = stats[max_limit][index - 1]
+                result = np.where(np.logical_and(min_percent <= nn_dist, nn_dist < max_percent))
+                results.append(len(result[0]))
+            column = f'{min_limit} - {max_limit}'
+            stats_percentiles[column] = results
+            i += 1
+        stats_percentiles_cumsum = stats_percentiles.cumsum(axis=1)
+        stats_percentiles_cumsum.columns = ['cumsum ' + col.split(' - ')[1] for col in stats_percentiles_cumsum.columns]
+
         # Function used to plot the distances between the nn of every instance in the dataset
         if plot_points:
-            self.plot_first_nn_distances(distances_map, pred, stats, title)
+            self.plot_first_nn_distances(distances_map, pred, stats, percentiles, title)
+        if plot_pca:
             self.plot_pca(dataset, instance, title=f'{title} 2D PCA')
-        return stats
+        return (stats, stats_percentiles, stats_percentiles_cumsum)
 
-    def plot_first_nn_distances(self, distances_map, pred, stats, title):
-        percentiles = ['25%', '50%', '75%', '80%', '85%', '90%', '95%']
+    def plot_first_nn_distances(self, distances_map, pred, stats, percentiles, title):
         retained = len(distances_map[1]) - self.number_of_base_instances
         if retained > 0:
             colors = ['tab:blue', 'tab:green', 'tab:red']
@@ -528,7 +578,7 @@ class PCBR:
         self.plot_pca_2D(dataset=dataset, labels=labels, plot_title=title)
 
     def plot_pca_2D(self, dataset, labels, plot_title=''):
-        pca = PCA(n_components=2)
+        pca = PCA(n_components=2, random_state=7)
         df_2D = pd.DataFrame(pca.fit_transform(dataset), columns=['PCA1', 'PCA2'])
         df_2D['Instance type'] = labels
         sn.lmplot(x="PCA1", y="PCA2", data=df_2D, fit_reg=False, hue='Instance type', legend=False, scatter_kws={"s": 25})
