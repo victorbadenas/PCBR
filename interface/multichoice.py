@@ -21,9 +21,10 @@ class MultiChoiceDialog(QDialog):
         self.Dialog.resize(*size)
 
         self.options = options
+        self.size = size
 
         self.scrollArea = QtWidgets.QScrollArea(self.Dialog)
-        self.scrollArea.setGeometry(QtCore.QRect(10, 10, 301, 251))
+        self.scrollArea.setGeometry(QtCore.QRect(5, 5, size[0] - 10, size[1] - 10))
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
 
@@ -73,8 +74,8 @@ if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
     Dialog = QtWidgets.QDialog()
-    ui = Ui_Dialog()
-    ui.setupUi(Dialog, options=['test1', 'test2', 'test3', 'test4'])
+    ui = MultiChoiceDialog()
+    ui.setupUi(Dialog, options=['testlongerstring1', 'test2', 'test3', 'test4'])
     Dialog.show()
     app.exec_()
     print(ui.result)

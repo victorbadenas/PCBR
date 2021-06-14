@@ -782,23 +782,23 @@ class Ui_MainWindow(object):
         return ', '.join(values)
 
     def run_pcbr(self):
-        if not self.check_all_correct():
-            app_logger.info(f'all values have not been completed.')
-            return
-        else:
-            app_logger.info(f'all values correct, proceeding to run pcbr')
+        # if not self.check_all_correct():
+        #     app_logger.info(f'all values have not been completed.')
+        #     return
+        # else:
+        #     app_logger.info(f'all values correct, proceeding to run pcbr')
 
-        profile_str = self.build_profile_str()
-        pref_str = self.build_pref_str()
-        constraints_str = self.build_constraints_str()
+        # profile_str = self.build_profile_str()
+        # pref_str = self.build_pref_str()
+        # constraints_str = self.build_constraints_str()
 
-        # profile_str = "2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0"
-        # pref_str = "5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0"
-        # constraints_str = "cpu_brand: PreferIntel, gpu_brand: AMD, min_ram: 32, max_budget: 1500, optical_drive: yes"
+        profile_str = "2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0"
+        pref_str = "5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0"
+        constraints_str = "cpu_brand: PreferIntel, gpu_brand: AMD, min_ram: 32, max_budget: 1500, optical_drive: yes"
 
-        app_logger.info(f'profile_str: {profile_str}')
-        app_logger.info(f'pref_str: {pref_str}')
-        app_logger.info(f'constraints_str: {constraints_str}')
+        # app_logger.info(f'profile_str: {profile_str}')
+        # app_logger.info(f'pref_str: {pref_str}')
+        # app_logger.info(f'constraints_str: {constraints_str}')
 
         user_request = UserRequest(
             profile_str,
@@ -847,14 +847,18 @@ class Ui_MainWindow(object):
 
     def revise_possibilities(self, proposed_solutions, components):
         want_to_modify = self.ask_binary_question(
-            'Would you like to change any components (y/n)? (n will drop the solution)'
+            'Would you like to change something else? Yes will open part selector and No will advance to the next step'
         )
         if want_to_modify:
             remaining_components = components[:-1]
             index = ['Original solution']
             satisfactory = False
             while len(remaining_components) > 0 and not satisfactory:
-                selected_component_idx = self.ask_radio_options(remaining_components, title='Select one component type between the following ones:')
+                selected_component_idx = self.ask_radio_options(
+                    remaining_components, 
+                    title='Select one component type between the following ones:',
+                    size=(400, 350) # TODO: resize
+                )
                 selected_component = remaining_components[selected_component_idx]
                 remaining_components.pop(selected_component_idx)
                 all_values = self.pcbr.extract_all_values_for_component(selected_component)
@@ -879,7 +883,7 @@ class Ui_MainWindow(object):
             
                 index.append(len(index))
                 if len(remaining_components) > 0:
-                    satisfactory = not self.print_solutions(proposed_solutions, components, index, text="Would you like to change something more (y/n)?")
+                    satisfactory = not self.print_solutions(proposed_solutions, components, index, text="Would you like to change something more (n/y)?")
                 else:
                     satisfactory = True
             return self.ask_which_solution_is_final(proposed_solutions, components, index)
@@ -928,9 +932,9 @@ class Ui_MainWindow(object):
         
         if text is None:
             if len(index) == 1:
-                text = "The proposed solution is the following:"
+                text = "The proposed solution is the following. Is the solution acceptable?:"
             else:
-                text = "The modified solutions are the following:"
+                text = "The modified solutions are the following. Is the solution acceptable?:"
 
         revise_qbox = QtWidgets.QMessageBox()
         revise_qbox.setFixedWidth(800)
