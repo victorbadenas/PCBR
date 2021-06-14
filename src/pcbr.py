@@ -1,3 +1,4 @@
+import time
 import os, sys, logging
 import numpy as np
 import pandas as pd
@@ -19,7 +20,6 @@ from neighbors.knn import KNeighborsClassifier
 from neighbors.nn import NearestNeighbors
 from adapt_pc import AdaptPC
 from user_request import UserRequest
-from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
 
 # Logger objects
@@ -443,13 +443,13 @@ class PCBR:
         full_new_instance = user_profile.tolist()[0]
         full_new_instance.extend(numeric_revised_solution)
 
-        full_knn = OurNearestNeighbors(n_neighbors=n_neighbors, metric='euclidean').fit(full_data.to_numpy())
+        full_knn = NearestNeighbors(n_neighbors=n_neighbors, metric='euclidean').fit(full_data.to_numpy())
         full_neigh = full_knn.kneighbors_graph(full_data.to_numpy())
         full_pred = full_knn.kneighbors([full_new_instance])
         full_pred_first_distance = full_pred[0][0][0]
         full_stats = self.extract_statistics(full_neigh, full_pred_first_distance,
                                                full_data, [full_new_instance], n_neighbors, title='Problem + Solution',
-                                               plot_points=False, plot_pca=False)
+                                               plot_points=True, plot_pca=True)
 
         print('\n---------------------------------------')
         pcbr_logger.debug(f"Distance to the closest point from the prediction for source: {full_pred_first_distance}")
@@ -611,8 +611,7 @@ class PCBR:
             pcbr_logger.info('Source and Target files removed!')
 
 
-if __name__ == '__main__':
-    import time
+def run_pcbr():
     setup_logging()
 
     # initialize pcbr
@@ -622,7 +621,7 @@ if __name__ == '__main__':
         st = time.time()
 
         # user_request = pcbr.get_user_request() # cli
-        user_request = pcbr.get_user_request(mock_file='../data/mock_requests.tsv', mode='one_pass') # mock_file
+        user_request = pcbr.get_user_request(mock_file='../data/mock_requests.tsv', mode='one_pass')  # mock_file
 
         if not isinstance(user_request, UserRequest):
             # if get_user_request returns None, the mock file lines have been exhausted, stop run
@@ -644,4 +643,12 @@ if __name__ == '__main__':
         rev_ret_time = time.time()
 
         # compute ending time and print it, move onto next item
-        pcbr_logger.info(f'time for processing an instance {proc_time - st:.2f}s, time for revision and {rev_ret_time - st:.2f}s')
+        pcbr_logger.info(
+            f'time for processing an instance {proc_time - st:.2f}s, time for revision and {rev_ret_time - st:.2f}s')
+
+def run_generator(n_runs = 1000):
+    print(f'Yosha! I am a generator ssj{n_runs}!')
+
+if __name__ == '__main__':
+    # run_pcbr()
+    run_generator()
