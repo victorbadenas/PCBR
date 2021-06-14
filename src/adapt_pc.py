@@ -265,7 +265,7 @@ class AdaptPC:
                         cpu_found = True
 
                     # Check alternate list, if required
-                    if not cpu_found:
+                    if not cpu_found and self.cpu_table_alt is not None:
                         reuse_logger.debug('No suitable CPU in preferred list. Checking alternate list...')
                         candidate_cpus = self.cpu_table_alt[self.cpu_table_alt['CPU Mark'] >= self.cur_numeric_soln[MAP_CPU]]
                         if not candidate_cpus.empty:
@@ -285,7 +285,7 @@ class AdaptPC:
                         gpu_found = True
 
                     # Check alternate list, if required
-                    if not gpu_found:
+                    if not gpu_found and self.gpu_table_alt is not None:
                         reuse_logger.debug('No suitable GPU in preferred list. Checking alternate list...')
                         candidate_gpus = self.gpu_table_alt[self.gpu_table_alt['Benchmark'] >= self.cur_numeric_soln[MAP_GPU]]
                         if not candidate_gpus.empty:
@@ -356,10 +356,15 @@ class AdaptPC:
         # I also think that CPU and GPU brand should be correct since we haven't taken price into consideration
         # at any point up until now. Let's just print a warning if this isn't true so we can know about it
         # and see if we need to add anything here. These aren't severe enough to warrant asserting.
+        # Update: This seems to be possible to hit. It happens when the CPU brand is restricted
+        #         to Intel, but it's trying to replace an AMD processor with a significantly
+        #         higher benchmark
         if constraints_check[0] == False: # CPU Brand
-            reuse_logger.warn('CPU Brand constraint error.')
+            reuse_logger.warn('Warning: CPU Brand constraint could not be met.')
+            reuse_logger.debug(self.cur_symbolic_soln)
         if constraints_check[1] == False: # GPU Brand
-            reuse_logger.warn('GPU Brand constraint error.')
+            reuse_logger.warn('Warning: GPU Brand constraint could not be met.')
+            reuse_logger.debug(self.cur_symbolic_soln)
 
         # Now we're left with only budget
         # Let's figure out whether performance or budget is more important and optimize components accordingly
