@@ -646,9 +646,11 @@ def run_pcbr():
         pcbr_logger.info(
             f'time for processing an instance {proc_time - st:.2f}s, time for revision and {rev_ret_time - st:.2f}s')
 
-def run_generator(n_runs = 1000):
+
+def run_generator(n_runs=1000):
     print(f'Yosha! I am a generator ssj{n_runs}!')
 
+
 if __name__ == '__main__':
-    # run_pcbr()
-    run_generator()
+    run_pcbr()
+    #run_generator()
