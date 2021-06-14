@@ -1,19 +1,22 @@
 import os, sys, logging
-from collections.abc import Callable
-from typing import Union
 import numpy as np
-from datetime import datetime
+import pandas as pd
 import seaborn as sn
+
+from typing import Union
+from collections.abc import Callable
+from datetime import datetime
+from pathlib import Path
+from matplotlib import pyplot as plt
 
 sys.path.append(os.path.dirname(__file__))
 
 from data.preprocessor import read_initial_cbl, read_table
-import pandas as pd
 from data.mapper import Mapper
 from utils.io import read_file
 from utils.typing import represents_int, str_to_dict
 from neighbors.knn import KNeighborsClassifier
-from neighbors.nn import NearestNeighbors as OurNearestNeighbors
+from neighbors.nn import NearestNeighbors
 from adapt_pc import AdaptPC
 from user_request import UserRequest
 from matplotlib import pyplot as plt
@@ -116,6 +119,8 @@ class PCBR:
         self.input_constraints = None
         self.new_instance_marker = '##NEW PCBR INSTANCE##'
 
+        Path(self.table_paths['retain_source']).parent.mkdir(exist_ok=True, parents=True)
+        Path(self.table_paths['output_saved_model']).parent.mkdir(exist_ok=True, parents=True)
         pcbr_logger.info('Initialization complete!')
 
     def get_user_request(self, mock_file=None, mode='one_pass') -> UserRequest:
@@ -169,6 +174,11 @@ class PCBR:
                 self.feature_relevance_matrix
             )
             return user_req_rv
+
+    def set_input_profile(self, user_request:UserRequest):
+        self.input_profile = user_request.profile
+        self.input_pref = user_request.preferences
+        self.input_constraints = user_request.constraints
 
     def get_cli_requests(self):
         profile_str = self.get_user_input(
@@ -563,7 +573,8 @@ class PCBR:
         self.update_dataset(revised_solution, self.target_attributes.columns.tolist(), self.table_paths['retain_target'])
 
     def update_dataset(self, revised_solution, columns, path):
-        solution = pd.DataFrame([revised_solution], columns=columns, index=None)
+        revised_solution = np.atleast_2d(revised_solution)
+        solution = pd.DataFrame(revised_solution, columns=columns, index=None)
         if os.path.isfile(path):
             retained = pd.read_csv(path, index_col=None)
             retained = retained.append(solution, ignore_index=True)
@@ -575,6 +586,16 @@ class PCBR:
         if os.path.isfile(self.table_paths['retain_source']) and os.path.isfile(self.table_paths['retain_target']):
             source = pd.read_csv(self.table_paths['retain_source'], index_col=None)
             target = pd.read_csv(self.table_paths['retain_target'], index_col=None)
+            # map to real values
+            source_transf = []
+            for column in source:
+                t = self.transformations[column]
+                source_transf.append(t["scaler"].inverse_transform([[source[column][0]]])[0,0])
+                if "map" in t:
+                    inv_map = {v:k for k, v in t['map'].items()}
+                    source_transf[-1] = inv_map[int(source_transf[-1])]
+            source = pd.DataFrame([source_transf], columns=source.columns, index=source.index)
+
             retained_instances = pd.concat([target, source], axis=1)
             dropped_column = 'Comments (don\'t use commas)'
             retained_instances[dropped_column] = self.new_instance_marker
