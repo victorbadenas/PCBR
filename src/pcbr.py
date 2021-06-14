@@ -428,54 +428,24 @@ class PCBR:
         source = self.source_attributes
         target = self.target_attributes
 
-        # To generate statistics of the Problem and Solution
-        # source_knn = OurNearestNeighbors(n_neighbors=n_neighbors).fit(source.to_numpy())
-        # source_neigh = source_knn.kneighbors_graph(source.to_numpy())
-        # source_pred = source_knn.kneighbors(user_profile)
-        # source_pred_first_distance = source_pred[0][0][0]
-        # source_stats = self.extract_statistics(source_neigh, source_pred_first_distance,
-        #                                        source, user_profile, n_neighbors, title='Problem',
-        #                                        plot_points=False)
-
-        # target_knn = OurNearestNeighbors(n_neighbors=n_neighbors).fit(target.to_numpy())
-        # target_neigh = target_knn.kneighbors_graph(target.to_numpy())
-        # target_pred = target_knn.kneighbors([numeric_revised_solution])
-        # target_pred_first_distance = target_pred[0][0][0]
-        # target_stats = self.extract_statistics(target_neigh, target_pred_first_distance,
-        #                                        target, [numeric_revised_solution], n_neighbors, title='Solution',
-        #                                        plot_points=False)
-
         # Concatenating Problems and Solutions to see their representations in the nn space
         full_data = pd.concat([source, target], axis=1)
         full_new_instance = user_profile.tolist()[0]
         full_new_instance.extend(numeric_revised_solution)
 
-        full_knn = OurNearestNeighbors(n_neighbors=n_neighbors).fit(full_data.to_numpy())
+        full_knn = OurNearestNeighbors(n_neighbors=n_neighbors, metric='euclidean').fit(full_data.to_numpy())
         full_neigh = full_knn.kneighbors_graph(full_data.to_numpy())
         full_pred = full_knn.kneighbors([full_new_instance])
         full_pred_first_distance = full_pred[0][0][0]
         full_stats = self.extract_statistics(full_neigh, full_pred_first_distance,
                                                full_data, [full_new_instance], n_neighbors, title='Problem + Solution',
-                                               plot_points=True, plot_pca=True)
+                                               plot_points=False, plot_pca=False)
 
         print('\n---------------------------------------')
-        # pcbr_logger.debug(f"Distance to the closest point from the prediction for source: {target_pred_first_distance}")
-        # pcbr_logger.debug(f"SOURCE STATISTICS")
-        # pcbr_logger.debug(source_stats[0].head(), '\n')
-
-        # pcbr_logger.debug(f"Distance to the closest point from the prediction for target: {target_pred_first_distance}")
-        # pcbr_logger.debug(f"TARGET STATISTICS")
-        # pcbr_logger.debug(target_stats[0].head(), '\n')
-
         pcbr_logger.debug(f"Distance to the closest point from the prediction for source: {full_pred_first_distance}")
         pcbr_logger.debug(f"Full Problems+Solutions STATISTICS")
         pcbr_logger.debug(full_stats[0].head(), '\n')
 
-        # We don't save problems and solutions that have predicted the first nn close:
-        # Problem close --> Solution close ==> Not saved!
-        # Problem close --> Solution far ==> OK
-        # Problem far --> Solution close ==> OK
-        # Problem far --> Solution far ==> OK
         if full_pred_first_distance <= full_stats[0]['25%'][0]:
             print("The proposed solution has NOT been stored!")
         else:
@@ -550,12 +520,10 @@ class PCBR:
                 plt.scatter(x=X[index], y=[0] * len(X[index]), c=colors[index], s=250, marker="|")
             elif colors[index] == 'tab:red':
                 plt.scatter(x=X[index], y=[0] * len(X[index]), c=colors[index], s=250, label=labels[index],
-                            alpha=0.5,
-                            edgecolors='none')
+                            alpha=0.5)
             else:
                 plt.scatter(x=X[index], y=[0] * len(X[index]), c=colors[index], s=250, label=labels[index],
-                            alpha=0.3,
-                            edgecolors='none')
+                            alpha=0.3)
         plt.title(f'{title} distances to the NN')
         plt.legend(loc='best', title='Instance type')
         plt.tight_layout()
@@ -569,19 +537,22 @@ class PCBR:
             new_sol = [f'New {title}']
             labels.extend(retained)
             labels.extend(new_sol)
+            colors = ['tab:blue', 'tab:green', 'tab:red']
         else:
             labels = ['Base'] * self.number_of_base_instances
             new_sol = [f'New {title}']
             labels.extend(new_sol)
+            colors = ['tab:blue', 'tab:red']
         pred_df = pd.DataFrame(instance, columns=dataset.columns.tolist())
         dataset = dataset.append(pred_df, ignore_index=True)
-        self.plot_pca_2D(dataset=dataset, labels=labels, plot_title=title)
+        self.plot_pca_2D(dataset=dataset, labels=labels, colors=colors, plot_title=title)
 
-    def plot_pca_2D(self, dataset, labels, plot_title=''):
+    def plot_pca_2D(self, dataset, labels, colors, plot_title=''):
         pca = PCA(n_components=2, random_state=7)
         df_2D = pd.DataFrame(pca.fit_transform(dataset), columns=['PCA1', 'PCA2'])
         df_2D['Instance type'] = labels
-        sn.lmplot(x="PCA1", y="PCA2", data=df_2D, fit_reg=False, hue='Instance type', legend=False, scatter_kws={"s": 25})
+        sn.lmplot(x="PCA1", y="PCA2", data=df_2D, fit_reg=False, hue='Instance type', legend=False, scatter_kws={"s": 25},
+                  palette=colors)
         plt.legend(title='Instance type', loc='best')
         plt.title(plot_title)
         plt.tight_layout()
@@ -625,7 +596,6 @@ if __name__ == '__main__':
 
     # initialize pcbr
     pcbr = PCBR()
-
     while True:
         # starting time
         st = time.time()
@@ -654,5 +624,3 @@ if __name__ == '__main__':
 
         # compute ending time and print it, move onto next item
         pcbr_logger.info(f'time for processing an instance {proc_time - st:.2f}s, time for revision and {rev_ret_time - st:.2f}s')
-
-    # Kevin: I think that we talked yesterday about just keeping the loop.
