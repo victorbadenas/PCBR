@@ -781,24 +781,35 @@ class Ui_MainWindow(object):
         values.append(f'max_budget: {self.textEdit.toPlainText()}')
         return ', '.join(values)
 
+    def show_warning(self, message):
+        wbox = QtWidgets.QMessageBox()
+        wbox.setFixedWidth(800)
+        wbox.setText(message)
+        wbox.setWindowTitle("Warning: unfilled answers")
+        wbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+
+        returnValue = wbox.exec()
+        return returnValue == QtWidgets.QMessageBox.Yes
+
     def run_pcbr(self):
-        # if not self.check_all_correct():
-        #     app_logger.info(f'all values have not been completed.')
-        #     return
-        # else:
-        #     app_logger.info(f'all values correct, proceeding to run pcbr')
+        if not self.check_all_correct():
+            app_logger.info(f'all values have not been completed.')
+            self.show_warning('Some of the attributes have not been set')
+            return
+        else:
+            app_logger.info(f'all values correct, proceeding to run pcbr')
 
-        # profile_str = self.build_profile_str()
-        # pref_str = self.build_pref_str()
-        # constraints_str = self.build_constraints_str()
+        profile_str = self.build_profile_str()
+        pref_str = self.build_pref_str()
+        constraints_str = self.build_constraints_str()
 
-        profile_str = "2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0"
-        pref_str = "5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0"
-        constraints_str = "cpu_brand: PreferIntel, gpu_brand: AMD, min_ram: 32, max_budget: 1500, optical_drive: yes"
+        # profile_str = "2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0"
+        # pref_str = "5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0"
+        # constraints_str = "cpu_brand: PreferIntel, gpu_brand: AMD, min_ram: 32, max_budget: 1500, optical_drive: yes"
 
-        # app_logger.info(f'profile_str: {profile_str}')
-        # app_logger.info(f'pref_str: {pref_str}')
-        # app_logger.info(f'constraints_str: {constraints_str}')
+        app_logger.info(f'profile_str: {profile_str}')
+        app_logger.info(f'pref_str: {pref_str}')
+        app_logger.info(f'constraints_str: {constraints_str}')
 
         user_request = UserRequest(
             profile_str,
@@ -840,7 +851,7 @@ class Ui_MainWindow(object):
             if revise_result is not None:
                 index = ['Final revised solution']
                 app_logger.info(f'result revised')
-                self.print_solutions([revise_result], columns, index, text="Final Solution")
+                self.print_solutions([revise_result], columns, index, text="Select the final solution:")
         else:
             revise_result = proposed_solution
         return revise_result
@@ -903,7 +914,7 @@ class Ui_MainWindow(object):
         qbox.setFont(QtGui.QFont('Consolas', 9, QtGui.QFont.Monospace))
         qbox.setInformativeText(dataframe.to_markdown())
         qbox.setWindowTitle("Solutions")
-        qbox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        qbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
         qbox.show()
 
         return_value = self.ask_radio_options(index, title='Which option is final')
