@@ -1,5 +1,6 @@
 import time
 import os, sys, logging
+import argparse
 import numpy as np
 import pandas as pd
 import seaborn as sn
@@ -627,11 +628,11 @@ class PCBR:
             pcbr_logger.info('Source and Target files removed!')
 
 
-def run_pcbr():
+def run_pcbr(path_to_cbl='../data/pc_specs.csv'):
     setup_logging()
 
     # initialize pcbr
-    pcbr = PCBR()
+    pcbr = PCBR(cbl_path=path_to_cbl)
     while True:
         # starting time
         st = time.time()
@@ -756,7 +757,7 @@ def run_generator(n_runs=1000):
         proc_times.append(time1)
         time2 = rev_ret_time - st
         retain_times.append(time2)
-        print("{:.1%}".format(run_i / n_runs))
+        #print("{:.1%}".format(run_i / n_runs))
 
     print('retained_count:', retained_count)
     plot_result(data=proc_times, title='Retrieve-Reuse time per run', y_label='Execution time')
@@ -765,5 +766,12 @@ def run_generator(n_runs=1000):
 
 
 if __name__ == '__main__':
-    run_pcbr()
-    # run_generator(n_runs=10000)
+    ap=argparse.ArgumentParser()
+    ap.add_argument("-g", "--generator", action='store_true', help="run random case generator")
+    ap.add_argument("-c", "--cbl_path", default='../data/pc_specs.csv', help="path to the case base library")
+    args=vars(ap.parse_args())
+
+    if args['generator']:
+        run_generator(n_runs=10000)
+    else:
+        run_pcbr(path_to_cbl=args['cbl_path'])
