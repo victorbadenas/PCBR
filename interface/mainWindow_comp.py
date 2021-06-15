@@ -25,10 +25,12 @@ pd.set_option('display.expand_frame_repr', False)
 
 
 class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
+    def setupUi(self, MainWindow, pcbr_args):
         MainWindow.setObjectName("MainWindow")
         MainWindow.setFixedSize(846, 668)
         self.center(MainWindow)
+
+        self.pcbr_args = pcbr_args
 
         self.radio_groups = dict()
         self.radio_groups_values = dict()
@@ -645,7 +647,7 @@ class Ui_MainWindow(object):
         app_logger.info(f'{self.__class__.__name__} initialized')
         app_logger.info(f'initializing PCBR')
         self.pcbr = PCBR(
-            cbl_path="data/pc_specs.csv",
+            cbl_path=self.pcbr_args.cbl_path,
             cpu_path="data/cpu_table.csv",
             gpu_path="data/gpu_table.csv",
             ram_path="data/ram_table.csv",
