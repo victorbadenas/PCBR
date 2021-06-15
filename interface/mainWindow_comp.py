@@ -748,7 +748,7 @@ class Ui_MainWindow(object):
         self.radioButton_72.setText(_translate("MainWindow", "128 GB"))
         self.label_16.setText(_translate("MainWindow", "Max. budget"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Advanced"))
-        # self.pushButton.setEnabled(False)
+        self.pushButton.setEnabled(False)
 
     def center(self, MainWindow):
         qr = MainWindow.frameGeometry()
@@ -822,20 +822,20 @@ class Ui_MainWindow(object):
         return returnValue == QtWidgets.QMessageBox.Yes
 
     def run_pcbr(self):
-        # if not self.check_all_correct():
-        #     app_logger.info(f'all values have not been completed.')
-        #     self.show_warning('Some of the attributes have not been set')
-        #     return
-        # else:
-        #     app_logger.info(f'all values correct, proceeding to run pcbr')
+        if not self.check_all_correct():
+            app_logger.info(f'all values have not been completed.')
+            self.show_warning('Some of the attributes have not been set')
+            return
+        else:
+            app_logger.info(f'all values correct, proceeding to run pcbr')
 
-        # profile_str = self.build_profile_str()
-        # pref_str = self.build_pref_str()
-        # constraints_str = self.build_constraints_str()
+        profile_str = self.build_profile_str()
+        pref_str = self.build_pref_str()
+        constraints_str = self.build_constraints_str()
 
-        profile_str = "2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0"
-        pref_str = "5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0"
-        constraints_str = "cpu_brand: PreferIntel, gpu_brand: AMD, min_ram: 32, max_budget: 1500, optical_drive: yes"
+        # profile_str = "2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0"
+        # pref_str = "5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0"
+        # constraints_str = "cpu_brand: PreferIntel, gpu_brand: AMD, min_ram: 32, max_budget: 1500, optical_drive: yes"
 
         app_logger.info(f'profile_str: {profile_str}')
         app_logger.info(f'pref_str: {pref_str}')
