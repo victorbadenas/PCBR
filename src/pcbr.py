@@ -492,13 +492,13 @@ class PCBR:
         descriptions = []
         for dist in distances_map.values():
             df = pd.DataFrame(dist)
-            desc = df.describe(percentiles=[.25, .33, .40, .5, .75, .85, .95]).T
+            desc = df.describe(percentiles=[.25, .40, .5, .75, .85, .95]).T
             descriptions.append(desc)
         statistics = pd.concat(descriptions, axis=0)
         stats = pd.DataFrame(statistics.values, columns=statistics.columns)
 
         stats_percentiles = pd.DataFrame()
-        percentiles = ['25%', '33%', '40%', '50%', '75%', '85%', '95%', 'max']
+        percentiles = ['25%', '40%', '50%', '75%', '85%', '95%', 'max']
         max_limit = 'min'
         i = 0
         while max_limit != 'max':
@@ -578,7 +578,7 @@ class PCBR:
         sn.lmplot(x="PCA1", y="PCA2", data=df_2D, fit_reg=False, hue='Instance type', legend=False,
                   scatter_kws={"s": 25},
                   palette=colors)
-        plt.legend(title='Instance type', loc='best')
+        plt.legend(title='Instance type', loc='best', prop={'size': 6})
         plt.title(plot_title)
         plt.tight_layout()
         plt.show()
