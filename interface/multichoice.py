@@ -23,7 +23,8 @@ class MultiChoiceDialog(QDialog):
 
         self.options = options
         self.size = size
-
+        self.result = None
+        
         self.scrollArea = QtWidgets.QScrollArea(self.Dialog)
         self.scrollArea.setGeometry(QtCore.QRect(5, 5, size[0] - 10, size[1] - 10))
         self.scrollArea.setWidgetResizable(True)
@@ -63,10 +64,8 @@ class MultiChoiceDialog(QDialog):
         self.pushButton.setText(_translate("Dialog", "OK"))
 
     def return_value(self):
-        self.result = None
         for idx, button in enumerate(self.radioButtons):
             if button.isChecked():
-                print(idx)
                 self.result = idx
                 self.Dialog.close()
                 break

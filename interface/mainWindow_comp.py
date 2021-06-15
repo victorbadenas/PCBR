@@ -17,6 +17,7 @@ from pcbr import PCBR
 from utils.typing import represents_float
 from user_request import UserRequest
 from multichoice import MultiChoiceDialog
+from tableWindow import TableWindow
 
 app_logger = logging.getLogger('app')
 pd.set_option('max_columns', None)
@@ -747,7 +748,7 @@ class Ui_MainWindow(object):
         self.radioButton_72.setText(_translate("MainWindow", "128 GB"))
         self.label_16.setText(_translate("MainWindow", "Max. budget"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Advanced"))
-        self.pushButton.setEnabled(False)
+        # self.pushButton.setEnabled(False)
 
     def center(self, MainWindow):
         qr = MainWindow.frameGeometry()
@@ -821,20 +822,20 @@ class Ui_MainWindow(object):
         return returnValue == QtWidgets.QMessageBox.Yes
 
     def run_pcbr(self):
-        if not self.check_all_correct():
-            app_logger.info(f'all values have not been completed.')
-            self.show_warning('Some of the attributes have not been set')
-            return
-        else:
-            app_logger.info(f'all values correct, proceeding to run pcbr')
+        # if not self.check_all_correct():
+        #     app_logger.info(f'all values have not been completed.')
+        #     self.show_warning('Some of the attributes have not been set')
+        #     return
+        # else:
+        #     app_logger.info(f'all values correct, proceeding to run pcbr')
 
-        profile_str = self.build_profile_str()
-        pref_str = self.build_pref_str()
-        constraints_str = self.build_constraints_str()
+        # profile_str = self.build_profile_str()
+        # pref_str = self.build_pref_str()
+        # constraints_str = self.build_constraints_str()
 
-        # profile_str = "2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0"
-        # pref_str = "5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0"
-        # constraints_str = "cpu_brand: PreferIntel, gpu_brand: AMD, min_ram: 32, max_budget: 1500, optical_drive: yes"
+        profile_str = "2, 1, Programming, 1, 3, 1, 0, 0, 0, 1, 0, 0"
+        pref_str = "5, 2, 3, 1, 2, 1, 3, 4, 1, 0, 1, 0, 0"
+        constraints_str = "cpu_brand: PreferIntel, gpu_brand: AMD, min_ram: 32, max_budget: 1500, optical_drive: yes"
 
         app_logger.info(f'profile_str: {profile_str}')
         app_logger.info(f'pref_str: {pref_str}')
@@ -883,7 +884,7 @@ class Ui_MainWindow(object):
             if revise_result is not None:
                 index = ['Final revised solution']
                 app_logger.info(f'result revised')
-                self.print_solutions([revise_result], columns, index, text="Select the final solution:")
+                self.print_solutions([revise_result], columns, index, text="Final Solution", buttons=('Ok',))
         else:
             revise_result = proposed_solution
         return revise_result
@@ -941,20 +942,18 @@ class Ui_MainWindow(object):
         columns[-2] = "Optical Drive"
 
         dataframe = pd.DataFrame(proposed_solutions, columns=columns, index=index)
+        text = 'Final proposed solutions (showcase window)'
 
-        qbox = QtWidgets.QMessageBox()
-        qbox.setFixedWidth(800)
-        qbox.setText("Final proposed solutions (showcase window, close to select)")
-        qbox.setFont(QtGui.QFont('Consolas', 9, QtGui.QFont.Monospace))
-        qbox.setInformativeText(dataframe.to_markdown())
-        qbox.setWindowTitle("Solutions")
-        qbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
-        qbox.show()
+        return_value = None
+        while return_value is None:
+            Dialog = QtWidgets.QDialog()
+            ui = TableWindow()
+            ui.setupUi(Dialog, data=dataframe, text=text, size=(850, 350), buttons=(), title='Solutions')
+            Dialog.show()
 
-        return_value = self.ask_radio_options(index, title='Which option is final')
-        qbox.close()
-        if return_value is None:
-            self.Dialog.close()
+            return_value = self.ask_radio_options(index, title='Which option is final')
+            ui.close()
+
         return proposed_solutions[return_value]
 
     def show_values_and_get_choice(self, selected_component, all_values):
@@ -971,7 +970,7 @@ class Ui_MainWindow(object):
         Dialog.exec()
         return ui.result
 
-    def print_solutions(self, proposed_solutions, columns, index, text=None):
+    def print_solutions(self, proposed_solutions, columns, index, text=None, buttons=('No', 'Yes')):
         columns = list(columns)
         columns[-2] = "Optical Drive"
         dataframe = pd.DataFrame(proposed_solutions, columns=columns, index=index)
@@ -982,22 +981,17 @@ class Ui_MainWindow(object):
             else:
                 text = "The modified solutions are the following. Is the solution acceptable?:"
 
-        revise_qbox = QtWidgets.QMessageBox()
-        revise_qbox.setFixedWidth(800)
-        revise_qbox.setText(text)
-        revise_qbox.setFont(QtGui.QFont('Consolas', 9, QtGui.QFont.Monospace))
-        revise_qbox.setInformativeText(dataframe.to_markdown())
-        revise_qbox.setWindowTitle("Solutions")
-        revise_qbox.setDetailedText(dataframe.to_markdown())
-        revise_qbox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
-
-        returnValue = revise_qbox.exec()
-        return returnValue == QtWidgets.QMessageBox.Yes
+        Dialog = QtWidgets.QDialog()
+        ui = TableWindow()
+        ui.setupUi(Dialog, data=dataframe, text=text, size=(850, 350), buttons=buttons)
+        Dialog.show()
+        Dialog.exec()
+        return ui.result == 'Yes'
 
     def ask_binary_question(self, message):
         qbox = QtWidgets.QMessageBox()
         qbox.setText(message)
-        qbox.setFont(QtGui.QFont('Consolas', 9, QtGui.QFont.Monospace))
+        # qbox.setFont(QtGui.QFont('Consolas', 9, QtGui.QFont.Monospace))
         qbox.setWindowTitle("Question")
         qbox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
 
