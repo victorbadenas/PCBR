@@ -465,7 +465,7 @@ class PCBR:
         pcbr_logger.debug(f"Full Problems+Solutions STATISTICS")
         pcbr_logger.debug(full_stats[0].head(), '\n')
 
-        if full_pred_first_distance <= full_stats[0]['25%'][0]:
+        if full_pred_first_distance <= full_stats[0]['40%'][0]:
             if verbose:
                 print("The proposed solution has NOT been stored!")
                 return 0
@@ -492,13 +492,13 @@ class PCBR:
         descriptions = []
         for dist in distances_map.values():
             df = pd.DataFrame(dist)
-            desc = df.describe(percentiles=[.25, .5, .75, .85, .95]).T
+            desc = df.describe(percentiles=[.25, .33, .40, .5, .75, .85, .95]).T
             descriptions.append(desc)
         statistics = pd.concat(descriptions, axis=0)
         stats = pd.DataFrame(statistics.values, columns=statistics.columns)
 
         stats_percentiles = pd.DataFrame()
-        percentiles = ['25%', '50%', '75%', '85%', '95%', 'max']
+        percentiles = ['25%', '33%', '40%', '50%', '75%', '85%', '95%', 'max']
         max_limit = 'min'
         i = 0
         while max_limit != 'max':
@@ -673,7 +673,6 @@ def plot_result(data, title, y_label):
     plt.title(title)
     plt.ylabel(y_label)
     plt.xlabel('Runs')
-    # plt.savefig(f'../data/{title.replace(' ', '_')}.png')
     plt.show()
 
 
@@ -757,7 +756,6 @@ def run_generator(n_runs=1000):
         proc_times.append(time1)
         time2 = rev_ret_time - st
         retain_times.append(time2)
-        #print("{:.1%}".format(run_i / n_runs))
 
     print('retained_count:', retained_count)
     plot_result(data=proc_times, title='Retrieve-Reuse time per run', y_label='Execution time')
