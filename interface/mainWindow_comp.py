@@ -821,7 +821,6 @@ class Ui_MainWindow(object):
         wbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
 
         returnValue = wbox.exec()
-        return returnValue == QtWidgets.QMessageBox.Yes
 
     def run_pcbr(self):
         if not self.check_all_correct():
