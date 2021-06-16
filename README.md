@@ -126,7 +126,7 @@ And the contents of the folders are the following:
   - **utils**: collection of io and typing utilities.
   - `adapt_pc.py`: contains the class used to perform the Reuse function and adapt a case to the input request
   - `constraints.py`: contains the class used to apply the constraints to the system's data.
-  - `pcbr.py`: main pcbr object. running this file runs the cli interface for the project.
+  - `pcbr.py`: main pcbr object. Running this file runs the cli interface for the project.
   - `user_request.py`: contains the object for storing and processing user requests into the format that the system expects.
 - **test**: unittest folder.
 
