@@ -1,4 +1,4 @@
-ID,CPU,RAM (GB),SSD (GB),HDD (GB),GPU,Optical Drive (1 = DVD; 0 = None),Price (€),Experience,WFH,Primary use,Budget,Replace (1-most frequent; 4-least frequent),Office,Photoshop,VideoChat,ML,Compilers,HighPerformanceGames,LowPerformanceGames,Comments (don't use commas)
+ID,CPU,RAM (GB),SSD (GB),HDD (GB),GPU,Optical Drive (1 = DVD; 0 = None),Price (eur),Experience,WFH,Primary use,Budget,Replace (1-most frequent; 4-least frequent),Office,Photoshop,VideoChat,ML,Compilers,HighPerformanceGames,LowPerformanceGames,Comments (don't use commas)
 0,Intel Core i5-11600,16,250,1000,Integrated,1,457.26000000000005,1,1,Home,1,4,1,0,0,0,0,0,1,Mid/low-end PC for casual email/browser use. If Win10 SSD absolutely required.
 1,Intel Core i7-10700,16,250,2000,GeForce GTX 1650,1,702.26,2,1,Gaming,2,2,0,0,1,0,0,1,1,Mid-end PC suitable for casual gaming
 2,Intel Core i7-11700,16,250,1000,Integrated,1,552.26,2,1,Programming,1,3,1,0,0,0,1,0,0,Mid-end PC not quite real gaming level but overkill for just email/browser. Somewhat future-proof.

@@ -264,7 +264,7 @@ class PCBR:
                                            [self.transformations['RAM (GB)']['scaler'],
                                             self.transformations['SSD (GB)']['scaler'],
                                             self.transformations['HDD (GB)']['scaler'],
-                                            self.transformations['Price (€)']['scaler']],
+                                            self.transformations['Price (eur)']['scaler']],
                                            user_request)
         pcbr_logger.debug('adapted to: ' + str(adapted_case))
         return adapted_case
@@ -688,7 +688,7 @@ def run_generator(n_runs=1000):
 
     advanced_user = {'cpu_brand:': {0: 'Intel', 1: 'PreferIntel', 2: 'Idc', 3: 'PreferAMD', 4: 'AMD'},
                      'gpu_brand:': {0: 'NVIDIA', 1: 'PreferNVIDIA', 2: 'Idc', 3: 'PreferAMD', 4: 'AMD'},
-                     'max_budget:': (scalers['Price (€)']['min'], scalers['Price (€)']['max']),
+                     'max_budget:': (scalers['Price (eur)']['min'], scalers['Price (eur)']['max']),
                      'min_ram:': {0: 'Idc', 1: '16', 2: '32', 3: '64', 4: '128'},
                      'optical_drive:': {0: 'no', 1: 'yes'}
                      }

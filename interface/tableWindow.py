@@ -102,7 +102,7 @@ class TableWindow(object):
 
 
 if __name__ == "__main__":
-    # |                   | CPU                  |   RAM (GB) |   SSD (GB) |   HDD (GB) | GPU                    |   Optical Drive (1 = DVD; 0 = None) |   Price (€) |
+    # |                   | CPU                  |   RAM (GB) |   SSD (GB) |   HDD (GB) | GPU                    |   Optical Drive (1 = DVD; 0 = None) |   Price (eur) |
     # |:------------------|:---------------------|-----------:|-----------:|-----------:|:-----------------------|------------------------------------:|------------:|
     # | Original solution | Intel Core i5-11600K |         32 |        250 |       1000 | Radeon RX 580          |                                   1 |      801.92 |
     # | 1                 | Intel Core i5-11600K |         32 |        250 |       1000 | GeForce GTX 1660 SUPER |                                   1 |      801.92 |
@@ -113,7 +113,7 @@ if __name__ == "__main__":
     import sys
 
     data = [
-        ['ID', 'CPU', 'RAM (GB)', 'SSD (GB)', 'HDD (GB)', 'GPU', 'Optical Drive', 'Price (€)'],
+        ['ID', 'CPU', 'RAM (GB)', 'SSD (GB)', 'HDD (GB)', 'GPU', 'Optical Drive', 'Price (eur)'],
         ["Original solution", "Intel Core i5-11600K", "32", "250", "1000", "Radeon RX 580", "1", "801.92"],
         ["1", "Intel Core i5-11600K", "32", "250", "1000", "GeForce GTX 1660 SUPER", "1", "801.92"],
         ["2", "AMD Ryzen 9 5900X", "32", "250", "1000", "GeForce GTX 1660 SUPER", "1", "1190.92"],

@@ -21,7 +21,7 @@ hdd_prices = cases['HDD (GB)'].map(hdd_table['Price'].to_dict()).astype(float)
 opdr_prices = cases['Optical Drive (1 = DVD, 0 = None)'].map(opdr_table['Price'].to_dict()).astype(float)
 
 df = pd.DataFrame([cpu_prices, gpu_prices, ram_prices, ssd_prices, hdd_prices, opdr_prices]).T
-cases['Price (€)'] = df.sum(axis=1)
+cases['Price (eur)'] = df.sum(axis=1)
 
 cases.round(decimals=2)
 

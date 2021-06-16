@@ -115,7 +115,7 @@
         "min": 0,
         "max": 1
     },
-    "Price (€)": {
+    "Price (eur)": {
         "type": "MinMaxScaler",
         "log2": false,
         "min": 0,
