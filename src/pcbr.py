@@ -169,9 +169,7 @@ class PCBR:
             profile_str, pref_str, constraints_str = self.get_cli_requests()
             if profile_str is None or pref_str is None or constraints_str is None:
                 return None
-            self.input_profile = [x.strip() for x in profile_str.split(',')]
-            self.input_pref = [x.strip() for x in pref_str.split(',')]
-            self.input_constraints = [x.strip() for x in constraints_str.split(',')]
+            self.set_input_profile(profile_str, pref_str, constraints_str)
             user_req_rv = UserRequest(
                 profile_str,
                 pref_str,
@@ -181,10 +179,10 @@ class PCBR:
             )
             return user_req_rv
 
-    def set_input_profile(self, profile_str, pref_str, constr_str):
-        self.input_profile = profile_str
-        self.input_pref = pref_str
-        self.input_constraints = constr_str
+    def set_input_profile(self, profile_str, pref_str, constraints_str):
+        self.input_profile = [x.strip() for x in profile_str.split(',')]
+        self.input_pref = [x.strip() for x in pref_str.split(',')]
+        self.input_constraints = [x.strip() for x in constraints_str.split(',')]
 
     def get_cli_requests(self):
         profile_str = self.get_user_input(
@@ -606,15 +604,6 @@ class PCBR:
         if os.path.isfile(self.table_paths['retain_source']) and os.path.isfile(self.table_paths['retain_target']):
             source = pd.read_csv(self.table_paths['retain_source'], index_col=None)
             target = pd.read_csv(self.table_paths['retain_target'], index_col=None)
-            # map to real values
-            source_transf = []
-            for column in source:
-                t = self.transformations[column]
-                source_transf.append(t["scaler"].inverse_transform([[source[column][0]]])[0, 0])
-                if "map" in t:
-                    inv_map = {v: k for k, v in t['map'].items()}
-                    source_transf[-1] = inv_map[int(source_transf[-1])]
-            source = pd.DataFrame([source_transf], columns=source.columns, index=source.index)
 
             retained_instances = pd.concat([target, source], axis=1)
             dropped_column = 'Comments (don\'t use commas)'
