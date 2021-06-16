@@ -1,4 +1,8 @@
-# PCBR
+# PCBR: PC Parts Recommender
+
+<p align="center">
+  <img src="logo.png" alt="PCBR logo" width="250"/>
+</p>
 
 W3 MAI-SEL final project. Implementation of a CBR system for PC Specs recommendation.
 
