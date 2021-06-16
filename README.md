@@ -117,7 +117,7 @@ The directory has the structure of the following tree:
 
 And the contents of the folders are the following:
 
-- **data**: *csv, json, tsv* and anything data related. Contains the initial cbl in `data/pc_specs.csv`, the tables with component data in `data/*_table.csv`, the feature scalers info and normalization parameters per feature in json format in `data/feature_scalers.csv`, the feature relevance matrix in csv format in `data/feature_relevance.csv` and finally the mock requests file in `data/mock_requests.tsv`.
+- **data**: *csv, json, tsv* and anything data related. Contains the initial cbl in `data/pc_specs.csv`, the tables with component data in `data/*_table.csv`, the feature scalers info and normalization parameters per feature in json format in `data/feature_scalers.json`, the feature relevance matrix in csv format in `data/feature_relevance.csv` and finally the mock requests file in `data/mock_requests.tsv`.
 - **interface**: GUI PyQt5 files. It contains the welcome page and starting executable file `interface/welcomePage.py` as well as other window files.
 - **scripts**: only contains scripts used during the project. The only file is a script that given a cbl and the component's tables, computes the price for each instance.
 - **src**: main code folder for the project.
