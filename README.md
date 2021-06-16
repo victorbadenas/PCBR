@@ -14,7 +14,7 @@ For automated instalation using conda on linux use:
 source setup.sh
 ```
 
-For the time being we only support python 3.6. To install the environment:
+The application was developed in python3.6 using Linux and MacOS. Those OS are strongly recommended. The application has been spot-checked in Windows 10, but some cross-platoform incompatibilities in PyQt bindings cause the GUI to freeze at times. We strongly recommend MacOS os Linux for this reason. For the time being we only support python 3.6. To install the environment:
 
 ```bash
 conda create --name pcbr python=3.6
