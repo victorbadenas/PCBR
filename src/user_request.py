@@ -69,8 +69,6 @@ class UserRequest:
         # Input format: string with multiple comma-separated key: value pairs of constraints. 
         # Input example: 'cpu_brand: Intel, gpu_brand: PreferNVIDIA, max_budget: 1000'
         # Output format: Constraints object
-        # Kevin: This part will be processed after the weighted kNN so as to try to solve the different constraints
-        #        by giving different options to the user via UI.
         constraints_dict = str_to_dict(constraints_str)
         return Constraints(constraints_dict)
 

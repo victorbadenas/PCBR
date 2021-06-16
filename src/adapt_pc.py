@@ -77,8 +77,6 @@ class AdaptPC:
                             for target_col in range(nearest_neighbors.shape[1])]
 
         # Use domain knowledge to adapt it
-        # Kevin: Constraints will be solved after the adaptation stage. It takes into account possible compatibility
-        #        issues. The solution is already optimized based on the weighted kNN.
         reuse_logger.debug('Numeric representation: ' + str(adapted_solution))
         self.cur_symbolic_soln = self._map_to_closest(adapted_solution)
         reuse_logger.debug('Configuration after weighted adaptation: ' + str(self.cur_symbolic_soln))

@@ -903,7 +903,7 @@ class Ui_MainWindow(object):
                 selected_component_idx = self.ask_radio_options(
                     remaining_components,
                     title='Select one component type between the following ones:',
-                    size=(400, 350)  # TODO: resize
+                    size=(400, 350)
                 )
                 selected_component = remaining_components[selected_component_idx]
                 remaining_components.pop(selected_component_idx)
@@ -924,7 +924,6 @@ class Ui_MainWindow(object):
                     new_solution[-1] = latest_solution_price
                     proposed_solutions.append(new_solution)
                 else:
-                    # TODO: QMessageBox
                     app_logger.info('Sorry but the chosen component has not valid alternatives!')
                     app_logger.info('\nSelect one component number between the following ones:')
 
