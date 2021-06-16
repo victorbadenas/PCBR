@@ -23,6 +23,10 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+## Troubleshooting
+
+in ubuntu, if the pyqt raises the error `qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.` please execute `sudo apt-get install --reinstall libxcb-xinerama0`
+
 ## Run with GUI
 
 The following command will run the pcbr software using the graphical user interface.
