@@ -167,11 +167,11 @@ class PCBR:
             return UserRequest(*request_strings, self.transformations, self.feature_relevance_matrix)
         else:
             profile_str, pref_str, constraints_str = self.get_cli_requests()
+            if profile_str is None or pref_str is None or constraints_str is None:
+                return None
             self.input_profile = profile_str.split(',')
             self.input_pref = pref_str.split(',')
             self.input_constraints = constraints_str.split(',')
-            if profile_str is None or pref_str is None or constraints_str is None:
-                return None
             user_req_rv = UserRequest(
                 profile_str,
                 pref_str,
