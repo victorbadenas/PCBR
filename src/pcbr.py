@@ -169,9 +169,9 @@ class PCBR:
             profile_str, pref_str, constraints_str = self.get_cli_requests()
             if profile_str is None or pref_str is None or constraints_str is None:
                 return None
-            self.input_profile = profile_str.split(',')
-            self.input_pref = pref_str.split(',')
-            self.input_constraints = constraints_str.split(',')
+            self.input_profile = [x.strip() for x in profile_str.split(',')]
+            self.input_pref = [x.strip() for x in pref_str.split(',')]
+            self.input_constraints = [x.strip() for x in constraints_str.split(',')]
             user_req_rv = UserRequest(
                 profile_str,
                 pref_str,
@@ -181,10 +181,10 @@ class PCBR:
             )
             return user_req_rv
 
-    def set_input_profile(self, user_request: UserRequest):
-        self.input_profile = user_request.profile
-        self.input_pref = user_request.preferences
-        self.input_constraints = user_request.constraints
+    def set_input_profile(self, profile_str, pref_str, constr_str):
+        self.input_profile = profile_str
+        self.input_pref = pref_str
+        self.input_constraints = constr_str
 
     def get_cli_requests(self):
         profile_str = self.get_user_input(
@@ -620,7 +620,12 @@ class PCBR:
             dropped_column = 'Comments (don\'t use commas)'
             retained_instances[dropped_column] = self.new_instance_marker
 
-            pc_specs = pd.read_csv(self.table_paths['cbl'], index_col=None)
+            if os.path.exists(self.table_paths['output_saved_model']):
+                input_csv = self.table_paths['output_saved_model']
+            else:
+                input_csv = self.table_paths['cbl']
+
+            pc_specs = pd.read_csv(input_csv, index_col=None)
             pc_specs_max_id = pc_specs['ID'].max() + 1
             retained_instances.insert(0, 'ID', list(range(pc_specs_max_id, pc_specs_max_id + target.shape[0])))
             pc_specs = pc_specs.append(retained_instances, ignore_index=True)
@@ -663,6 +668,7 @@ def run_pcbr(path_to_cbl='../data/pc_specs.csv'):
         revision_result = pcbr.revise(proposed_solution)
         if revision_result is not None:  # If the expert has not dropped the solution
             pcbr.retain(revision_result, user_request.profile, n_neighbors=n_neighbors)
+            pcbr.save_model()
         rev_ret_time = time.time()
 
         # compute ending time and print it, move onto next item

@@ -842,6 +842,8 @@ class Ui_MainWindow(object):
         app_logger.info(f'pref_str: {pref_str}')
         app_logger.info(f'constraints_str: {constraints_str}')
 
+        self.pcbr.set_input_profile(profile_str, pref_str, constraints_str)
+
         user_request = UserRequest(
             profile_str,
             pref_str,
@@ -849,7 +851,7 @@ class Ui_MainWindow(object):
             self.pcbr.transformations,
             self.pcbr.feature_relevance_matrix
         )
-        self.pcbr.set_input_profile(user_request)
+
 
         app_logger.info(f'user_request: {user_request}')
 
